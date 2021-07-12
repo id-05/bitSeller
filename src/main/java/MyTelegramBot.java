@@ -46,19 +46,30 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     //сообщение зарегистрированному ползователю
                     BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
                     sendMsg(user.getId(), "Hello, "+user.getName()+"!");
+                    try {
+                        execute(sendInlineKeyBoardMessage(update.getMessage().getChat().getId()));
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
                 }else{
                     if(registerStart){
-                        System.out.println("register start!");
                         if(password){
                             BitSellerUsers user = new BitSellerUsers(update.getMessage().getChat().getId().toString(),update.getMessage().getText());
-                            saveNewUser(user);
-                            password = false;
-                            registerStart = false;
+                            try{
+                                saveNewUser(user);
+                                password = false;
+                                registerStart = false;
+                                sendMsg(user.getId(), "Hello, "+user.getName()+"!");
+                            }catch (Exception e){
+                                sendMsg(user.getId(), "No valid name! Try again!");
+                            }
                         }else{
-                            System.out.println("wait password");
-                            if(update.getMessage().getText().equals("No! We are BitService!")) {
+                            String bufStr = update.getMessage().getText().toUpperCase().replaceAll("[\\s|\\u00A0]+", "");
+                            if(bufStr.equals("NO!WEAREBITSERVICE!")) {
                                 sendMsg(update.getMessage().getChat().getId().toString(), "Ok! Enter you name:");
                                 password = true;
+                            }else{
+                                sendMsg(update.getMessage().getChat().getId().toString(), "Are you gangsters?");
                             }
                         }
                     }else {
