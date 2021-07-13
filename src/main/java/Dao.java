@@ -2,6 +2,9 @@ import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.util.Iterator;
 import java.util.List;
 
@@ -98,6 +101,16 @@ public interface Dao {
             BitSellerUsers user = new BitSellerUsers();
             return user;
         }
+    }
+
+    public default List<BitSellerClients> getAllClients() {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<BitSellerClients> criteriaQuery = builder.createQuery(BitSellerClients.class);
+        Root<BitSellerClients> root = criteriaQuery.from(BitSellerClients.class);
+        criteriaQuery.select(root);
+        Query<BitSellerClients> query = session.createQuery(criteriaQuery);
+        return query.getResultList();
     }
 
 }

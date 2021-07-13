@@ -300,11 +300,11 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
         InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
         InlineKeyboardButton inlineKeyboardButton3 = new InlineKeyboardButton();
-        inlineKeyboardButton1.setText("Functions Bot");
+        inlineKeyboardButton1.setText("News");
         inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("functions","functions"));
-        inlineKeyboardButton2.setText("Settings Bot");
+        inlineKeyboardButton2.setText("Settings");
         inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","settings"));
-        inlineKeyboardButton3.setText("Close service");
+        inlineKeyboardButton3.setText("Stop my subscription");
         inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("exit","exit"));
         List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();

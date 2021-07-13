@@ -4,36 +4,33 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Main implements Dao{
-    public static MyTelegramBot bot = null;
-    public static String BotToken;
-    public static JsonSettings  hibernateSettings;
+    public MyTelegramBot bot = null;
+    public String BotToken;
+    public static JsonSettings hibernateSettings;
     public static StringBuilder stringBuilder = new StringBuilder();
+    public static TimerTask timerTask;
+    public static Timer timer;
 
     public Main() throws IOException {
         init();
         botInit();
+        timerStart();
         System.out.println("Main()");
     }
 
-    public static void botInit(){
+    public void botInit(){
         TelegramBotsApi botsApi = null;
         try {
             botsApi = new TelegramBotsApi(DefaultBotSession.class);
+            bot = new MyTelegramBot(BotToken);
+            botsApi.registerBot(bot);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-
-        bot = new MyTelegramBot(BotToken);
-
-        try {
-            assert botsApi != null;
-            botsApi.registerBot(bot);
-        } catch (TelegramApiException telegramApiRequestException) {
-            telegramApiRequestException.printStackTrace();
-        }
-
     }
 
     public void init(){
@@ -43,22 +40,25 @@ public class Main implements Dao{
             while((c=reader.read())!=-1){
                 stringBuilder.append((char)c);
             }
-
             if(stringBuilder != null){
-                //System.out.println(stringBuilder);
                 hibernateSettings = new JsonSettings(stringBuilder);
             }
             BotToken = getBitSellerResource("telegramtoken");
-            System.out.println("this place + "+getBitSellerResource("telegramtoken"));
-
         }
         catch(IOException ex){
             System.out.println(ex.getMessage());
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void timerStart(){
+        timerTask = null;
+        timer = null;
+        timerTask = new MainTask();
+        timer = new Timer(true);
+        timer.scheduleAtFixedRate(timerTask, 0, 1*60*1000);
+    }
 
+    public static void main(String[] args) throws Exception {
         Main main = new Main();
         while(true) {
 
