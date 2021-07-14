@@ -88,6 +88,19 @@ public interface Dao {
         }
     }
 
+    public default boolean ifExistPurchase(String purchaseid) {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        String hql = "FROM BitSellerPurchase U WHERE U.purchaseid = '" + purchaseid +"'";
+        Query query = session.createQuery(hql);
+        List<BitSellerUsers> results = query.list();
+
+        if (results.size() > 0) {
+            return true;
+        }else{
+            return false;
+        }
+    }
+
     public default BitSellerUsers getUserById(String userid){
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         String hql = "FROM BitSellerUsers U WHERE U.id = '" + userid + "'";
@@ -111,6 +124,30 @@ public interface Dao {
         criteriaQuery.select(root);
         Query<BitSellerClients> query = session.createQuery(criteriaQuery);
         return query.getResultList();
+    }
+
+    public default List<BitSellerUsers> getAllUsers() {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<BitSellerUsers> criteriaQuery = builder.createQuery(BitSellerUsers.class);
+        Root<BitSellerUsers> root = criteriaQuery.from(BitSellerUsers.class);
+        criteriaQuery.select(root);
+        Query<BitSellerUsers> query = session.createQuery(criteriaQuery);
+        return query.getResultList();
+    }
+
+    public default String getClientNameByINN(String clientINN){
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        String hql = "FROM BitSellerClients U WHERE U.id = '" + clientINN + "'";
+        Query query = session.createQuery(hql);
+        List<BitSellerClients> results = query.list();
+
+        if (results.size() > 0) {
+            Iterator<BitSellerClients> it = results.iterator();
+            return  it.next().getName();
+        }else{
+            return "noname";
+        }
     }
 
 }

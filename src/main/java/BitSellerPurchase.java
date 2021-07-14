@@ -27,4 +27,9 @@ public class BitSellerPurchase {
     public BitSellerPurchase(){
 
     }
+
+    public BitSellerPurchase(String purchaseid, String clientinn){
+        this.purchaseid = purchaseid;
+        this.clientinn = clientinn;
+    }
 }

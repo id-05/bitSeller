@@ -38,6 +38,39 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }
     }
 
+    public synchronized void sendNews(String chatId, List<Purchase> purchaseList) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Новости госзакупок:");
+        stringBuilder.append("\n");
+        String bufINN ="";
+        for(Purchase bufPurchase:purchaseList){
+            if(bufINN.equals(bufPurchase.getINN())){
+
+            }else{
+                bufINN = bufPurchase.getINN();
+                stringBuilder.append("\n");
+                stringBuilder.append(getClientNameByINN(bufPurchase.getINN())).append(":");
+                stringBuilder.append("\n");
+            }
+            stringBuilder.append("\n");
+            stringBuilder.append(bufPurchase.getId());
+            stringBuilder.append("\n");
+            stringBuilder.append(bufPurchase.getDescription());
+            stringBuilder.append("\n");
+            stringBuilder.append(bufPurchase.getPrice());
+            stringBuilder.append("\n");
+        }
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.enableMarkdown(true);
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(stringBuilder.toString());
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            System.out.println("Error send "+e.getMessage());
+        }
+    }
+
     @Override
     public void onUpdateReceived(Update update) {
         if(update.hasMessage()){
@@ -100,10 +133,21 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 System.out.println("secondTeg :"+secondTeg);
             }
 
-
-            if(firstTeg.equals("settings")){
-                if(secondTeg.equals("settings")) {
-                    SettingsMenu(update);
+            if(firstTeg.equals("subscription")){
+                if(secondTeg.equals("stop")) {
+                    System.out.println("stop subscription for "+update.getCallbackQuery().getId());
+                    BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
+                    System.out.println(user.getId());
+                    user.setSubscription(false);
+                    saveNewUser(user);
+                    //SettingsMenu(update);
+                }
+                if(secondTeg.equals("start")){
+                    System.out.println("start subscription for "+update.getCallbackQuery().getId());
+                    BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
+                    System.out.println(user.getId());
+                    user.setSubscription(true);
+                    saveNewUser(user);
                 }
 
             }
@@ -115,12 +159,12 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
 
             }
 
-            if(firstTeg.equals("exit")){
-                if(secondTeg.equals("exit")) {
-                    System.exit(0);
-                }
-
-            }
+//            if(firstTeg.equals("exit")){
+//                if(secondTeg.equals("exit")) {
+//                    System.exit(0);
+//                }
+//
+//            }
 
             if(firstTeg.equals("back")){
                 if(secondTeg.equals("main")){
@@ -238,7 +282,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         editMessage.setChatId(String.valueOf(update.getCallbackQuery().getMessage().getChatId()));
         editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         editMessage.setText("Bot functions:");
-        editMessage.setReplyMarkup(StartMenuInlineKeyboardMarkup());
+        editMessage.setReplyMarkup(StartMenuInlineKeyboardMarkup(update.getMessage().getChat().getId()));
         try {
             execute(editMessage);
         } catch (TelegramApiException ex){
@@ -295,7 +339,9 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         replyKeyboardMarkup.setKeyboard(keyboard);
     }
 
-    public static InlineKeyboardMarkup StartMenuInlineKeyboardMarkup(){
+    public InlineKeyboardMarkup StartMenuInlineKeyboardMarkup(Long chatId){
+        BitSellerUsers user = getUserById(chatId.toString());
+
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
         InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
@@ -304,8 +350,14 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("functions","functions"));
         inlineKeyboardButton2.setText("Settings");
         inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","settings"));
-        inlineKeyboardButton3.setText("Stop my subscription");
-        inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("exit","exit"));
+
+        if(user.isSubscription()) {
+            inlineKeyboardButton3.setText("Stop my subscription");
+            inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscriptionp", "stop"));
+        }else{
+            inlineKeyboardButton3.setText("Start my subscription");
+            inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscription", "start"));
+        }
         List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRow3 = new ArrayList<>();
@@ -320,7 +372,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         return inlineKeyboardMarkup;
     }
 
-    public static SendMessage sendInlineKeyBoardMessage(Long chatId) {
+    public SendMessage sendInlineKeyBoardMessage(Long chatId) {
         String hostname = "";
         try {
             InetAddress addr;
@@ -331,11 +383,10 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
-        sendMessage.setText("bitServer Bot, running on "+hostname);
-        sendMessage.setReplyMarkup(StartMenuInlineKeyboardMarkup());
+        sendMessage.setText("bitSeller Bot, running on "+hostname);
+        sendMessage.setReplyMarkup(StartMenuInlineKeyboardMarkup(chatId));
         return sendMessage;
     }
-
 
     @Override
     public String getBotUsername() {

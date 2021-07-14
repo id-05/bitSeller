@@ -1,10 +1,6 @@
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.*;
-import com.google.gson.JsonArray;
 import org.apache.commons.logging.LogFactory;
-import sun.plugin.javascript.navig.Anchor;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +9,14 @@ import java.util.logging.Level;
 public class WebHeandless {
     int coutnActivePurchase = 0;
     int currentDivNumber = 0;
+    List<Purchase> listPurchase = new ArrayList<>();
+    String INN;
 
     public WebHeandless(String INN) throws IOException {
+        this.INN = INN;
+    }
+
+    public List<Purchase> getActualPurchase() throws IOException {
         LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
         java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
         java.util.logging.Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
@@ -45,18 +47,9 @@ public class WebHeandless {
             }
         }
 
-//        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-//        assert bufStrings != null;
-//        for(String buf:bufStrings){
-//            System.out.println(buf);
-//        }
-//        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
         for(int i =0; i<bufStrings.length; i++){
-            //System.out.println(bufStrings[i]);
             String buf = bufStrings[i];
             if(buf.contains("Результаты поиска")){
-                //System.out.println("yes");
                 String bufStr = bufStrings[i+1];
                 int j = bufStr.indexOf(" ");
                 coutnActivePurchase = Integer.parseInt(bufStr.substring(0,j));
@@ -65,17 +58,12 @@ public class WebHeandless {
             }
         }
 
-        System.out.println("count "+coutnActivePurchase);
-
         currentDivNumber = 0;
-        List<Purchase> listPurchase = new ArrayList<>();
         for(int i =0; i<coutnActivePurchase; i++){
             for(int k = currentDivNumber; k < bufStrings.length; k++){
                 String bufStr = bufStrings[k];
-//                System.out.println("bufstr = "+bufStr);
-//                System.out.println("bufStr.charAt(0) = "+bufStr.charAt(0));
                 if(bufStr.charAt(0) == '№'){
-                    Purchase bufPurchase = new Purchase(bufStr.substring(2,bufStr.length()-1),
+                    Purchase bufPurchase = new Purchase(INN,bufStr.substring(2,bufStr.length()-1),
                             bufStrings[k+3], bufStrings[k+7]);
                     listPurchase.add(bufPurchase);
                     currentDivNumber = k+7;
@@ -84,12 +72,6 @@ public class WebHeandless {
             }
         }
 
-        for(Purchase bufP:listPurchase){
-            System.out.println("____________________________");
-            System.out.println("id = "+bufP.getId());
-            System.out.println("description = "+bufP.getDescription());
-            System.out.println("price = "+bufP.getPrice());
-        }
-
+        return listPurchase;
     }
 }

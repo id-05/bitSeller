@@ -7,9 +7,18 @@ public class BitSellerUsers {
     @Id
     private String id;
     private String Name;
+    private boolean subscription;
 
     public BitSellerUsers() {
 
+    }
+
+    public boolean isSubscription() {
+        return subscription;
+    }
+
+    public void setSubscription(boolean subscription) {
+        this.subscription = subscription;
     }
 
     public String getId() {

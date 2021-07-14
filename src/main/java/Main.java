@@ -8,7 +8,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Main implements Dao{
-    public MyTelegramBot bot = null;
+    public static MyTelegramBot bot = null;
     public String BotToken;
     public static JsonSettings hibernateSettings;
     public static StringBuilder stringBuilder = new StringBuilder();
@@ -55,7 +55,7 @@ public class Main implements Dao{
         timer = null;
         timerTask = new MainTask();
         timer = new Timer(true);
-        timer.scheduleAtFixedRate(timerTask, 0, 1*60*1000);
+        timer.scheduleAtFixedRate(timerTask, 0, 5*60*1000);
     }
 
     public static void main(String[] args) throws Exception {
