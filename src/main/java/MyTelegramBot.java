@@ -136,9 +136,27 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 }
             }
 
-            if(firstTeg.equals("functions")){
-                if(secondTeg.equals("functions")) {
-                    SettingsMenu(update);
+            if(firstTeg.equals("settings")){
+                if(secondTeg.equals("settings")) {
+                   System.out.println("настройки");
+                }
+
+                if(secondTeg.equals("getactive")) {
+                    System.out.println("активные закупки");
+                    List<BitSellerClients> clientList = new ArrayList<>();
+                    clientList = getAllClients();
+                    List<Purchase> news = new ArrayList<>();
+                    try {
+                        for (BitSellerClients bufClient : clientList) {
+                            WebHeandless webParser = new WebHeandless(bufClient.getINN());
+                            List<Purchase> listPurchase = webParser.getActualPurchase();
+                            news.addAll(listPurchase);
+                        }
+                        sendNews(update.getCallbackQuery().getMessage().getChat().getId().toString(), news);
+
+                    }catch (Exception e){
+                        System.out.println("Возникла ошибка при парсинге");
+                    }
                 }
 
             }
@@ -157,16 +175,16 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
         InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
         InlineKeyboardButton inlineKeyboardButton3 = new InlineKeyboardButton();
-        inlineKeyboardButton1.setText("News");
-        inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("functions","functions"));
-        inlineKeyboardButton2.setText("Settings");
+        inlineKeyboardButton1.setText("Получить активные закупки всех клиентов");
+        inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("settings","getactive"));
+        inlineKeyboardButton2.setText("Настройки");
         inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","settings"));
 
         if(user.isSubscription()) {
-            inlineKeyboardButton3.setText("Stop my subscription");
+            inlineKeyboardButton3.setText("Остановить подписку");
             inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscription", "stop"));
         }else{
-            inlineKeyboardButton3.setText("Start my subscription");
+            inlineKeyboardButton3.setText("Подписаться");
             inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscription", "start"));
         }
         List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
@@ -185,7 +203,8 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
             EditMessageText editMessage = new EditMessageText();
             editMessage.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
             editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-            editMessage.setText("Change subscribe");
+            editMessage.setText("Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
+                    "я проверяю данные на наличие обновлений и отправляю вам их");
             editMessage.setReplyMarkup(inlineKeyboardMarkup);
             try {
                 execute(editMessage);
@@ -195,7 +214,8 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }else{
             SendMessage sendMessage = new SendMessage();
             sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
-            sendMessage.setText("Change subscribe");
+            sendMessage.setText("Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
+                    "я проверяю данные на наличие обновлений и отправляю вам их");
             sendMessage.setReplyMarkup(inlineKeyboardMarkup);
             try {
                 execute(sendMessage);
