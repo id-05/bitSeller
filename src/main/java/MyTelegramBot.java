@@ -54,9 +54,9 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
             }
             stringBuilder.append("\n");
 
-            stringBuilder.append( "[<"+bufPurchase.getId()+">](<"+
+            stringBuilder.append( "["+bufPurchase.getId()+"]("+
                     "https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString="+
-                            bufPurchase.getId()+"&morphology=on>)" );
+                            bufPurchase.getId()+"&morphology=on)" );
 
             stringBuilder.append("\n");
             stringBuilder.append(bufPurchase.getDescription());
@@ -69,7 +69,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         sendMessage.setChatId(chatId);
         sendMessage.setText(stringBuilder.toString());
         System.out.println(stringBuilder);
-        sendMessage.setParseMode("MarkdownV2");
+        //sendMessage.setParseMode("MarkdownV2");
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
