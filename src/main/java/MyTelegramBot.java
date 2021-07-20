@@ -53,7 +53,11 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 stringBuilder.append("\n");
             }
             stringBuilder.append("\n");
-            stringBuilder.append(bufPurchase.getId());
+
+            stringBuilder.append( "[<"+bufPurchase.getId()+">](<"+
+                    "https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString="+
+                            bufPurchase.getId()+"&morphology=on>)" );
+
             stringBuilder.append("\n");
             stringBuilder.append(bufPurchase.getDescription());
             stringBuilder.append("\n");
@@ -64,6 +68,8 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(chatId);
         sendMessage.setText(stringBuilder.toString());
+        System.out.println(stringBuilder);
+        sendMessage.setParseMode("MarkdownV2");
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -148,11 +154,15 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     List<Purchase> news = new ArrayList<>();
                     try {
                         for (BitSellerClients bufClient : clientList) {
+                            news.clear();
                             WebHeandless webParser = new WebHeandless(bufClient.getINN());
                             List<Purchase> listPurchase = webParser.getActualPurchase();
                             news.addAll(listPurchase);
+                            if(news.size()>0) {
+                                sendNews(update.getCallbackQuery().getMessage().getChat().getId().toString(), news);
+                            }
                         }
-                        sendNews(update.getCallbackQuery().getMessage().getChat().getId().toString(), news);
+
 
                     }catch (Exception e){
                         System.out.println("Возникла ошибка при парсинге");
@@ -160,6 +170,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 }
 
             }
+
         }
     }
 
