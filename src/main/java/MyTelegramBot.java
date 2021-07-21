@@ -155,7 +155,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
 
                 if(secondTeg.equals("getactive")) {
                     System.out.println("активные закупки");
-                    List<BitSellerClients> clientList = new ArrayList<>();
+                    List<BitSellerClients> clientList;
                     clientList = getAllClients();
                     List<Purchase> news = new ArrayList<>();
                     try {
@@ -222,7 +222,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
     }
 
     public void SettingsMenu(Update update){
-        BitSellerUsers user = new BitSellerUsers();
+        BitSellerUsers user;
         if(update.hasCallbackQuery()){
             user = getUserById(String.valueOf(update.getCallbackQuery().getMessage().getChatId()));
         }else{
@@ -326,7 +326,6 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
             e.printStackTrace();
         }
         SendMessage sendMessage = new SendMessage();
-        //editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
         sendMessage.setText("bitSeller Bot, running on "+hostname);
         sendMessage.setReplyMarkup(StartMenuInlineKeyboardMarkup(update.getMessage().getChat().getId()));
@@ -354,7 +353,6 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
     }
 
     public static String GetJsonForBotMenu(String Name, String Data) {
-        String buf = null;
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("name", Name);
         jsonObject.addProperty("data", Data);
