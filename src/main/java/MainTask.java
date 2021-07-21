@@ -6,7 +6,7 @@ import java.util.TimerTask;
 public class MainTask extends TimerTask implements Dao {
     @Override
     public void run() {
-        List<BitSellerClients> clientList = new ArrayList<>();
+        List<BitSellerClients> clientList ;// = new ArrayList<>();
         List<Purchase> news = new ArrayList<>();
         clientList = getAllClients();
         for(BitSellerClients bufClient:clientList){
@@ -28,14 +28,20 @@ public class MainTask extends TimerTask implements Dao {
             }
         }
 
+
         if(news.size()>0) {
-            List<BitSellerUsers> usersList = new ArrayList<>();
+            ////////////////////////////////////////////////////////////
+            List<BitSellerUsers> usersList;// = new ArrayList<>();
             usersList = getAllUsers();
             for (BitSellerUsers bufUser : usersList) {
                 if(bufUser.isSubscription()) {
+
                     Main.bot.sendNews(bufUser.getId(), news);
+
                 }
             }
+            ////////////////////////////////////////////////////////////
         }
+
     }
 }

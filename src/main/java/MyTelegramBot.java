@@ -54,22 +54,21 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
             }
             stringBuilder.append("\n");
 
-            stringBuilder.append( "["+bufPurchase.getId()+"]("+
-                    "https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString="+
-                            bufPurchase.getId()+"&morphology=on)" );
+            stringBuilder.append("[").append(bufPurchase.getId()).append("](").
+                    append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
+                    append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
+                    append("=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)");
 
             stringBuilder.append("\n");
             stringBuilder.append(bufPurchase.getDescription());
             stringBuilder.append("\n");
-            stringBuilder.append(bufPurchase.getPrice());
+            stringBuilder.append("*"+bufPurchase.getPrice()+"*");
             stringBuilder.append("\n");
         }
         SendMessage sendMessage = new SendMessage();
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(chatId);
         sendMessage.setText(stringBuilder.toString());
-        System.out.println(stringBuilder);
-        //sendMessage.setParseMode("MarkdownV2");
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -82,10 +81,13 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         if(update.hasMessage()){
             if(update.getMessage().hasText()){
                 if(validateUser(update.getMessage().getChat().getId().toString())){
-                    //сообщение зарегистрированному ползователю
-                    BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
-                    sendMsg(user.getId(), "Hello, "+user.getName()+"!");
-                    SettingsMenu(update);
+                    if(update.getMessage().getText().equals("Админ")){
+                        AdminMenu(update);
+                    }else {
+                        BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
+                        sendMsg(user.getId(), "Hello, " + user.getName() + "!");
+                        SettingsMenu(update);
+                    }
                 }else{
                     if(registerStart){
                         if(password){
@@ -147,6 +149,10 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                    System.out.println("настройки");
                 }
 
+                if(secondTeg.equals("exit")) {
+                    System.exit(0);
+                }
+
                 if(secondTeg.equals("getactive")) {
                     System.out.println("активные закупки");
                     List<BitSellerClients> clientList = new ArrayList<>();
@@ -171,6 +177,47 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
 
             }
 
+            if(firstTeg.equals("back")){
+                if(secondTeg.equals("main")) {
+                    SettingsMenu(update);
+                }
+            }
+
+        }
+    }
+
+    public void AdminMenu(Update update){
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
+        InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
+        InlineKeyboardButton inlineKeyboardButton3 = new InlineKeyboardButton();
+        inlineKeyboardButton1.setText("Выключить бота");
+        inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("settings","exit"));
+        inlineKeyboardButton2.setText("Пусто");
+        inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("empty","empty"));
+        inlineKeyboardButton3.setText("В главное меню");
+        inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("back", "main"));
+
+        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
+        List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
+        List<InlineKeyboardButton> keyboardButtonsRow3 = new ArrayList<>();
+        keyboardButtonsRow1.add(inlineKeyboardButton1);
+        keyboardButtonsRow2.add(inlineKeyboardButton2);
+        keyboardButtonsRow3.add(inlineKeyboardButton3);
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(keyboardButtonsRow1);
+        rowList.add(keyboardButtonsRow2);
+        rowList.add(keyboardButtonsRow3);
+        inlineKeyboardMarkup.setKeyboard(rowList);
+
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
+        sendMessage.setText("Меню администратора:");
+        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException ex){
+            System.out.println(ex.toString());
         }
     }
 
