@@ -150,4 +150,32 @@ public interface Dao {
         }
     }
 
+    public default void saveNewSubscription(BitSellerSubscriptions subscription) {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+        session.saveOrUpdate(subscription);
+        transaction.commit();
+        session.close();
+    }
+
+    public default void deleteSubscription(BitSellerSubscriptions subscription) {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+        session.delete(subscription);
+        transaction.commit();
+        session.close();
+    }
+
+    public default List<BitSellerSubscriptions> getUserSubscriptions(String userid) {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+        Query query = null;
+        String hql= "from BitSellerSubscriptions  where user=:forgroup";
+        query = session.createQuery(hql);
+        query.setParameter("forgroup", userid);
+        List<BitSellerSubscriptions> results = query.list();
+        session.close();
+        return results;
+    }
+
 }
