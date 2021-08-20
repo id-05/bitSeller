@@ -1,4 +1,4 @@
-![](https://github.com/id-05/bitServer/blob/master/images/logo.png)
+![](https://github.com/id-05/bitSeller/blob/master/images/logo.png)
 
 
 # bitSeller - телеграмм бот гос-закупок
