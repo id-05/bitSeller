@@ -1,6 +1,6 @@
 {
   "hDriver":"com.mysql.cj.jdbc.Driver",
-  "hIP":"192.168.1.58",
+  "hIP":"192.168.1.63",
   "hPort":"3306",
   "hBaseName":"orthanc",
   "hLogin":"orthanc",

@@ -1,11 +1,14 @@
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.TimerTask;
 
 public class MainTask extends TimerTask implements Dao {
     @Override
     public void run() {
+        System.out.println("timer start "+new Date());
+
         List<BitSellerClients> clientList ;
         List<Purchase> news = new ArrayList<>();
         clientList = getAllClients();

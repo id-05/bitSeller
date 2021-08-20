@@ -32,6 +32,7 @@ public class WebHeandless {
                 "fz44=on&fz223=on&fz94=on&af=on&currencyIdGeneral=-1");
 
         List<?> divs = page.getByXPath("//div");
+
 //        for(Object obj:divs){
 //            HtmlDivision buf = (HtmlDivision) obj;
 //            System.out.println("__________________________________");
