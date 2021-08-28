@@ -62,7 +62,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
             stringBuilder.append("\n");
             stringBuilder.append(bufPurchase.getDescription());
             stringBuilder.append("\n");
-            stringBuilder.append("*"+bufPurchase.getPrice()+"*");
+            stringBuilder.append("*").append(bufPurchase.getPrice()).append("*");
             stringBuilder.append("\n");
         }
         SendMessage sendMessage = new SendMessage();
@@ -86,7 +86,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     }else {
                         BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
                         sendMsg(user.getId(), "Hello, " + user.getName() + "!");
-                        SettingsMenu(update);
+                        MainMenu(update);
                     }
                 }else{
                     if(registerStart){
@@ -134,19 +134,20 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     BitSellerUsers user = getUserById(update.getCallbackQuery().getMessage().getChat().getId().toString());
                     user.setSubscription(false);
                     saveNewUser(user);
-                    SettingsMenu(update);
+                    MainMenu(update);
                 }
                 if(secondTeg.equals("start")){
                     BitSellerUsers user = getUserById(update.getCallbackQuery().getMessage().getChat().getId().toString());
                     user.setSubscription(true);
                     saveNewUser(user);
-                    SettingsMenu(update);
+                    MainMenu(update);
                 }
             }
 
             if(firstTeg.equals("settings")){
                 if(secondTeg.equals("settings")) {
                    System.out.println("настройки");
+
                 }
 
                 if(secondTeg.equals("exit")) {
@@ -179,7 +180,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
 
             if(firstTeg.equals("back")){
                 if(secondTeg.equals("main")) {
-                    SettingsMenu(update);
+                    MainMenu(update);
                 }
             }
 
@@ -197,7 +198,6 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("empty","empty"));
         inlineKeyboardButton3.setText("В главное меню");
         inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("back", "main"));
-
         List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRow3 = new ArrayList<>();
@@ -221,7 +221,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }
     }
 
-    public void SettingsMenu(Update update){
+    public void MainMenu(Update update){
         BitSellerUsers user;
         if(update.hasCallbackQuery()){
             user = getUserById(String.valueOf(update.getCallbackQuery().getMessage().getChatId()));
@@ -237,7 +237,6 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("settings","getactive"));
         inlineKeyboardButton2.setText("Настройки");
         inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","settings"));
-
         if(user.isSubscription()) {
             inlineKeyboardButton3.setText("Остановить подписку");
             inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscription", "stop"));
@@ -283,25 +282,24 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }
     }
 
-    public InlineKeyboardMarkup StartMenuInlineKeyboardMarkup(Long chatId){
-        BitSellerUsers user = getUserById(chatId.toString());
+    public void SettingsMenu(Update update){
+        BitSellerUsers user;
+        if(update.hasCallbackQuery()){
+            user = getUserById(String.valueOf(update.getCallbackQuery().getMessage().getChatId()));
+        }else{
+            user = getUserById(String.valueOf(update.getMessage().getChat().getId()));
+        }
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
         InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
         InlineKeyboardButton inlineKeyboardButton3 = new InlineKeyboardButton();
-        inlineKeyboardButton1.setText("News");
-        inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("functions","functions"));
-        inlineKeyboardButton2.setText("Settings");
-        inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","settings"));
-
-        if(user.isSubscription()) {
-            inlineKeyboardButton3.setText("Stop my subscription");
-            inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscription", "stop"));
-        }else{
-            inlineKeyboardButton3.setText("Start my subscription");
-            inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscription", "start"));
-        }
+        inlineKeyboardButton1.setText("Добавить Котрагента");
+        inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("settings","addkontragent"));
+        inlineKeyboardButton2.setText("Список контрагентов");
+        inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","listkontragent"));
+        inlineKeyboardButton3.setText("Назад");
+        inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("settings", "back"));
         List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRow3 = new ArrayList<>();
@@ -313,32 +311,31 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         rowList.add(keyboardButtonsRow2);
         rowList.add(keyboardButtonsRow3);
         inlineKeyboardMarkup.setKeyboard(rowList);
-        return inlineKeyboardMarkup;
-    }
 
-    public SendMessage sendInlineKeyBoardMessage(Update update) {
-        String hostname = "";
-        try {
-            InetAddress addr;
-            addr = InetAddress.getLocalHost();
-            hostname = addr.getHostName();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+        if(update.hasCallbackQuery()){
+            EditMessageText editMessage = new EditMessageText();
+            editMessage.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
+            editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+            editMessage.setText("Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
+                    "я проверяю данные на наличие обновлений и отправляю вам их");
+            editMessage.setReplyMarkup(inlineKeyboardMarkup);
+            try {
+                execute(editMessage);
+            } catch (TelegramApiException ex){
+                System.out.println(ex.toString());
+            }
+        }else{
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
+            sendMessage.setText("Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
+                    "я проверяю данные на наличие обновлений и отправляю вам их");
+            sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+            try {
+                execute(sendMessage);
+            } catch (TelegramApiException ex){
+                System.out.println(ex.toString());
+            }
         }
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
-        sendMessage.setText("bitSeller Bot, running on "+hostname);
-        sendMessage.setReplyMarkup(StartMenuInlineKeyboardMarkup(update.getMessage().getChat().getId()));
-        return sendMessage;
-    }
-
-    public EditMessageText updateInlineKeyBoardMessage(Update update) {
-        EditMessageText editMessage = new EditMessageText();
-        editMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
-        editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-        editMessage.setText("Change subscribe");
-        editMessage.setReplyMarkup(StartMenuInlineKeyboardMarkup(update.getMessage().getChat().getId()));
-        return editMessage;
     }
 
 

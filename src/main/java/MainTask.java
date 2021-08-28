@@ -27,6 +27,7 @@ public class MainTask extends TimerTask implements Dao {
                 }
 
             } catch (IOException e) {
+
                System.out.println("Ошибка во время опроса по ИНН");
             }
         }
