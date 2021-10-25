@@ -5,13 +5,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,8 +14,15 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
 
     String Token;
     String UserName = "bitserver_bot";
+    String bufName = "";
+    String bufINN = "";
+    String welcometext = "Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
+            "я проверяю данные на наличие обновлений и отправляю вам их!";
     boolean registerStart = false;
     boolean password = false;
+    boolean newKontrgagentName = false;
+    boolean newKontrgagentINN = false;
+    boolean bottalk =false;
 
     public MyTelegramBot(String Token){
         this.Token = Token;
@@ -38,32 +40,34 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }
     }
 
+    public synchronized void sendMsg(String chatId, String s, InlineKeyboardMarkup inlineKeyboardMarkup) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.enableMarkdown(true);
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(s);
+        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            System.out.println("Error send "+e.getMessage());
+        }
+    }
+
     public synchronized void sendNews(String chatId, List<Purchase> purchaseList) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Новости госзакупок:");
-        stringBuilder.append("\n");
-        String bufINN ="";
+        stringBuilder.append("Новости госзакупок:").append("\n");
         for(Purchase bufPurchase:purchaseList){
-            if(bufINN.equals(bufPurchase.getINN())){
-
-            }else{
-                bufINN = bufPurchase.getINN();
-                stringBuilder.append("\n");
-                stringBuilder.append(getClientNameByINN(bufPurchase.getINN())).append(":");
-                stringBuilder.append("\n");
+            if(!bufPurchase.getINN().equals(""))
+            {
+                stringBuilder.append("\n").append(getClientNameByINN(bufPurchase.getINN())).append(":").append("\n").append("\n");
             }
-            stringBuilder.append("\n");
-
             stringBuilder.append("[").append(bufPurchase.getId()).append("](").
                     append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
                     append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
                     append("=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)");
 
-            stringBuilder.append("\n");
-            stringBuilder.append(bufPurchase.getDescription());
-            stringBuilder.append("\n");
-            stringBuilder.append("*").append(bufPurchase.getPrice()).append("*");
-            stringBuilder.append("\n");
+            stringBuilder.append("\n").append(bufPurchase.getDescription()).append("\n");
+            stringBuilder.append("*").append(bufPurchase.getPrice()).append("*").append("\n");
         }
         SendMessage sendMessage = new SendMessage();
         sendMessage.enableMarkdown(true);
@@ -84,9 +88,38 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     if(update.getMessage().getText().equals("Админ")){
                         AdminMenu(update);
                     }else {
-                        BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
-                        sendMsg(user.getId(), "Hello, " + user.getName() + "!");
-                        MainMenu(update);
+                        if(!newKontrgagentName) {
+                            BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
+                            sendMsg(user.getId(), "Hello, " + user.getName() + "!");
+                            MainMenu(update);
+                        }else{
+                            if(!newKontrgagentINN) {
+                                BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
+                                bufName = update.getMessage().getText();
+                                sendMsg(user.getId(), "Проверьте название, вы указали: "+update.getMessage().getText()+"\n"+
+                                        "Если всё верно, то теперь отправьте мне ИНН (не более 16 цифр)!",getBackKeybord());
+                                newKontrgagentINN = true;
+                            }else{
+                                bufINN = update.getMessage().getText();
+                                BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
+                                InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+                                ArrayList<MenuItem> menuItems = new ArrayList<>();
+                                menuItems.add(new MenuItem("Подтвердить","settings","saveKontragent"));
+                                menuItems.add(new MenuItem("Назад","settings","settings"));
+                                List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
+                                inlineKeyboardMarkup.setKeyboard(rowList);
+                                sendMsg(user.getId(), "Проверьте ИНН, вы указали: "+update.getMessage().getText()+"\n"+
+                                        "Если всё верно, то нажмите подтвердить!",inlineKeyboardMarkup);
+                            }
+                        }
+                        if(bottalk){
+                            List<BitSellerUsers> usersList;
+                            usersList = getAllUsers();
+                            for (BitSellerUsers bufUser : usersList) {
+                                sendMsg(bufUser.getId(), update.getMessage().getText());
+                            }
+                            bottalk = false;
+                        }
                     }
                 }else{
                     if(registerStart){
@@ -115,6 +148,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     }
                 }
             }
+
         }else if(update.hasCallbackQuery()){
             String firstTeg = "";
             String secondTeg = "";
@@ -122,11 +156,9 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
             JsonObject jsonObject = parser.parse(update.getCallbackQuery().getData()).getAsJsonObject();
             if (jsonObject.has("name")) {
                 firstTeg = jsonObject.get("name").getAsString();
-                System.out.println("firstTeg :"+firstTeg);
             }
             if (jsonObject.has("data")) {
                 secondTeg = jsonObject.get("data").getAsString();
-                System.out.println("secondTeg :"+secondTeg);
             }
 
             if(firstTeg.equals("subscription")){
@@ -144,18 +176,82 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 }
             }
 
-            if(firstTeg.equals("settings")){
-                if(secondTeg.equals("settings")) {
-                   System.out.println("настройки");
+            if(firstTeg.equals("settings")) {
+                if (secondTeg.equals("settings")) {
+                    newKontrgagentName = false;
+                    newKontrgagentINN = false;
+                    SettingsMenu(update);
+                }
 
+                if (secondTeg.equals("addkontragent")) {
+                    newKontrgagentName = true;
+                    EditingMessage(update, "Отправьте мне название контрагента (не более 32 символов)!", getBackKeybord());
+                }
+
+                if (secondTeg.equals("saveKontragent")) {
+                    if ((bufName.length() < 32) && (bufINN.length() < 16) ) {
+                        saveNewClient(new BitSellerClients(bufName, bufINN));
+                        EditingMessage(update, "Контрагент сохранен!", getBackKeybord());
+                        newKontrgagentName = false;
+                        newKontrgagentINN = false;
+                    }else{
+                        EditingMessage(update, "Введенные данные не корректны, не соответствуют длинне!", getBackKeybord());
+                        newKontrgagentName = false;
+                        newKontrgagentINN = false;
+                    }
+                }
+
+                if (secondTeg.equals("deletekontragent")) {
+                    SelectOneClient(update,"deletekontragent");
+                }
+            }
+
+            if(firstTeg.equals("deletekontragent")) {
+                List<BitSellerClients> clientList;
+                clientList = getAllClients();
+                for (BitSellerClients bufClient : clientList) {
+                    if(bufClient.getINN().equals(secondTeg)){
+
+                        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+                        ArrayList<MenuItem> menuItems = new ArrayList<>();
+                        menuItems.add(new MenuItem("Подтвердить","deleteKontr",bufClient.getINN()));
+                        menuItems.add(new MenuItem("Назад","settings","settings"));
+                        List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
+                        inlineKeyboardMarkup.setKeyboard(rowList);
+                        EditingMessage(update, "Вы действительно хотите удалить контрагента: "+bufClient.getName()+"  ИНН: "+bufClient.getINN(), inlineKeyboardMarkup);
+                    }
+                }
+            }
+
+            if(firstTeg.equals("deleteKontr")){
+                List<BitSellerClients> clientList;
+                clientList = getAllClients();
+                for (BitSellerClients bufClient : clientList) {
+                    if (bufClient.getINN().equals(secondTeg)) {
+                        deleteClient(bufClient);
+                        EditingMessage(update, "Контрагент удалён!", getBackKeybord());
+                    }
+                }
+            }
+
+            if(firstTeg.equals("purchases")){
+                if(secondTeg.equals("settings")) {
+                    SettingsMenu(update);
                 }
 
                 if(secondTeg.equals("exit")) {
                     System.exit(0);
                 }
 
+                if(secondTeg.equals("getoneactive")) {
+                    SelectOneClient(update,"getoneclient");
+                }
+
+                if(secondTeg.equals("backoneclient")) {
+                    SelectOneClient(update,"getoneclient");
+                }
+
                 if(secondTeg.equals("getactive")) {
-                    System.out.println("активные закупки");
                     List<BitSellerClients> clientList;
                     clientList = getAllClients();
                     List<Purchase> news = new ArrayList<>();
@@ -169,13 +265,41 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                                 sendNews(update.getCallbackQuery().getMessage().getChat().getId().toString(), news);
                             }
                         }
-
-
                     }catch (Exception e){
-                        System.out.println("Возникла ошибка при парсинге");
+                        System.out.println("Возникла ошибка при парсинге!");
                     }
                 }
+            }
 
+            if(firstTeg.equals("getoneclient")){
+                List<BitSellerClients> clientList;
+                clientList = getAllClients();
+                List<Purchase> news = new ArrayList<>();
+                try {
+                    for (BitSellerClients bufClient : clientList) {
+                        if(bufClient.getINN().equals(secondTeg)){
+                            news.clear();
+                            WebHeandless webParser = new WebHeandless(bufClient.getINN());
+                            List<Purchase> listPurchase = webParser.getActualPurchase();
+                            news.addAll(listPurchase);
+                            if(news.size()>0) {
+                                PurchacesOneClient(update, news);
+                            }
+                        }
+                    }
+                }catch (Exception e){
+                    System.out.println("Возникла ошибка при парсинге!");
+                }
+            }
+
+            if(firstTeg.equals("bottalk")){
+                bottalk = true;
+                InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+                ArrayList<MenuItem> menuItems = new ArrayList<>();
+                menuItems.add(new MenuItem("Назад","back","main"));
+                List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
+                inlineKeyboardMarkup.setKeyboard(rowList);
+                EditingMessage(update, "Отправьте мне текст и его увидят все пользователи!", inlineKeyboardMarkup);
             }
 
             if(firstTeg.equals("back")){
@@ -183,41 +307,98 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     MainMenu(update);
                 }
             }
+        }
+    }
 
+    public void EditingMessage(Update update, String text, InlineKeyboardMarkup keyboard){
+        EditMessageText editMessage = new EditMessageText();
+        editMessage.enableMarkdown(true);
+        editMessage.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
+        editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
+        editMessage.setText(text);
+        editMessage.setReplyMarkup(keyboard);
+        try {
+            execute(editMessage);
+        } catch (TelegramApiException ex){
+            System.out.println(ex.toString());
+        }
+    }
+
+    public void SendingMessage(Update update, String text, InlineKeyboardMarkup keyboard){
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
+        sendMessage.setText(text);
+        sendMessage.setReplyMarkup(keyboard);
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException ex){
+            System.out.println(ex.toString());
         }
     }
 
     public void AdminMenu(Update update){
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
-        InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
-        InlineKeyboardButton inlineKeyboardButton3 = new InlineKeyboardButton();
-        inlineKeyboardButton1.setText("Выключить бота");
-        inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("settings","exit"));
-        inlineKeyboardButton2.setText("Пусто");
-        inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("empty","empty"));
-        inlineKeyboardButton3.setText("В главное меню");
-        inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("back", "main"));
-        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
-        List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
-        List<InlineKeyboardButton> keyboardButtonsRow3 = new ArrayList<>();
-        keyboardButtonsRow1.add(inlineKeyboardButton1);
-        keyboardButtonsRow2.add(inlineKeyboardButton2);
-        keyboardButtonsRow3.add(inlineKeyboardButton3);
+        ArrayList<MenuItem> menuItems = new ArrayList<>();
+        menuItems.add(new MenuItem("Выключить бота","settings","exit"));
+        menuItems.add(new MenuItem("Отправить сообщение всем" ,"bottalk","bottalk"));
+        menuItems.add(new MenuItem("Назад","back","main"));
+        List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        SendingMessage(update, "Меню администратора:", inlineKeyboardMarkup);
+    }
+
+    public InlineKeyboardMarkup getBackKeybord(){
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        ArrayList<MenuItem> menuItems = new ArrayList<>();
+        menuItems.add(new MenuItem("Назад","settings","settings"));
+        List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        return inlineKeyboardMarkup;
+    }
+
+    public void PurchacesOneClient(Update update,List<Purchase> news){
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        rowList.add(keyboardButtonsRow1);
-        rowList.add(keyboardButtonsRow2);
-        rowList.add(keyboardButtonsRow3);
+        InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+        inlineKeyboardButton.setText("Назад");
+        inlineKeyboardButton.setCallbackData(GetJsonForBotMenu("purchases","backoneclient"));
+        List<InlineKeyboardButton> keyboardButtonsRow = new ArrayList<>();
+        keyboardButtonsRow.add(inlineKeyboardButton);
+        rowList.add(keyboardButtonsRow);
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        StringBuilder stringBuilder = new StringBuilder();
+        Purchase bufP = news.get(0);
+        if(!bufP.getINN().equals("")){
+            stringBuilder.append("\n").append(getClientNameByINN(bufP.getINN())).append(":").append("\n");
+        }
+        for(Purchase bufPurchase:news){
+
+            stringBuilder.append("\n").append("[").append(bufPurchase.getId()).append("](").
+                    append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
+                    append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
+                    append("=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)");
+            stringBuilder.append("\n").append(bufPurchase.getDescription()).append("\n");
+            stringBuilder.append("*").append(bufPurchase.getPrice()).append("*").append("\n");
+        }
+
+        if(update.hasCallbackQuery()){
+            EditingMessage(update, stringBuilder.toString(), inlineKeyboardMarkup);
+        }
+    }
+
+    public void SelectOneClient(Update update, String firsttag){
+        List<BitSellerClients> listClient = getAllClients();
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        ArrayList<MenuItem> menuItems = new ArrayList<>();
+        for(BitSellerClients bufClient:listClient){
+            menuItems.add(new MenuItem(bufClient.getName(),firsttag,bufClient.getINN()));
+        }
+        menuItems.add(new MenuItem("Назад","back","main"));
+        List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
         inlineKeyboardMarkup.setKeyboard(rowList);
 
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
-        sendMessage.setText("Меню администратора:");
-        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException ex){
-            System.out.println(ex.toString());
+        if(update.hasCallbackQuery()) {
+            EditingMessage(update, "Выберите одного из клиентов:", inlineKeyboardMarkup);
         }
     }
 
@@ -230,114 +411,51 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }
 
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
-        InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
-        InlineKeyboardButton inlineKeyboardButton3 = new InlineKeyboardButton();
-        inlineKeyboardButton1.setText("Получить активные закупки всех клиентов");
-        inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("settings","getactive"));
-        inlineKeyboardButton2.setText("Настройки");
-        inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","settings"));
+        ArrayList<MenuItem> menuItems = new ArrayList<>();
+        menuItems.add(new MenuItem("Получить активные закупки всех клиентов","purchases","getactive"));
+        menuItems.add(new MenuItem("Получить закупки одного клиента","purchases","getoneactive"));
+        menuItems.add(new MenuItem("Настройки","settings","settings"));
         if(user.isSubscription()) {
-            inlineKeyboardButton3.setText("Остановить подписку");
-            inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscription", "stop"));
+            menuItems.add(new MenuItem("Остановить подписку","subscription","stop"));
         }else{
-            inlineKeyboardButton3.setText("Подписаться");
-            inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("subscription", "start"));
+            menuItems.add(new MenuItem("Подписаться","subscription","start"));
         }
-        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
-        List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
-        List<InlineKeyboardButton> keyboardButtonsRow3 = new ArrayList<>();
-        keyboardButtonsRow1.add(inlineKeyboardButton1);
-        keyboardButtonsRow2.add(inlineKeyboardButton2);
-        keyboardButtonsRow3.add(inlineKeyboardButton3);
-        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        rowList.add(keyboardButtonsRow1);
-        rowList.add(keyboardButtonsRow2);
-        rowList.add(keyboardButtonsRow3);
+        List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
         inlineKeyboardMarkup.setKeyboard(rowList);
 
         if(update.hasCallbackQuery()){
-            EditMessageText editMessage = new EditMessageText();
-            editMessage.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
-            editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-            editMessage.setText("Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
-                    "я проверяю данные на наличие обновлений и отправляю вам их");
-            editMessage.setReplyMarkup(inlineKeyboardMarkup);
-            try {
-                execute(editMessage);
-            } catch (TelegramApiException ex){
-                System.out.println(ex.toString());
-            }
+            EditingMessage(update, welcometext, inlineKeyboardMarkup);
         }else{
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
-            sendMessage.setText("Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
-                    "я проверяю данные на наличие обновлений и отправляю вам их");
-            sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-            try {
-                execute(sendMessage);
-            } catch (TelegramApiException ex){
-                System.out.println(ex.toString());
-            }
+            SendingMessage(update, welcometext, inlineKeyboardMarkup);
         }
+    }
+
+    public List<List<InlineKeyboardButton>> getMenuFromItemList(ArrayList<MenuItem> menuItem){
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        for(MenuItem bufItem:menuItem) {
+            InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+            inlineKeyboardButton.setText(bufItem.getVisibleName());
+            inlineKeyboardButton.setCallbackData(GetJsonForBotMenu(bufItem.getFirstTag(),bufItem.getSecondTag()));
+            List<InlineKeyboardButton> keyboardButtonsRow = new ArrayList<>();
+            keyboardButtonsRow.add(inlineKeyboardButton);
+            rowList.add(keyboardButtonsRow);
+        }
+        return rowList;
     }
 
     public void SettingsMenu(Update update){
-        BitSellerUsers user;
-        if(update.hasCallbackQuery()){
-            user = getUserById(String.valueOf(update.getCallbackQuery().getMessage().getChatId()));
-        }else{
-            user = getUserById(String.valueOf(update.getMessage().getChat().getId()));
-        }
-
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
-        InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
-        InlineKeyboardButton inlineKeyboardButton3 = new InlineKeyboardButton();
-        inlineKeyboardButton1.setText("Добавить Котрагента");
-        inlineKeyboardButton1.setCallbackData(GetJsonForBotMenu("settings","addkontragent"));
-        inlineKeyboardButton2.setText("Список контрагентов");
-        inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","listkontragent"));
-        inlineKeyboardButton3.setText("Назад");
-        inlineKeyboardButton3.setCallbackData(GetJsonForBotMenu("settings", "back"));
-        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
-        List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
-        List<InlineKeyboardButton> keyboardButtonsRow3 = new ArrayList<>();
-        keyboardButtonsRow1.add(inlineKeyboardButton1);
-        keyboardButtonsRow2.add(inlineKeyboardButton2);
-        keyboardButtonsRow3.add(inlineKeyboardButton3);
-        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        rowList.add(keyboardButtonsRow1);
-        rowList.add(keyboardButtonsRow2);
-        rowList.add(keyboardButtonsRow3);
+        ArrayList<MenuItem> menuItems = new ArrayList<>();
+        menuItems.add(new MenuItem("Добавить Котрагента","settings","addkontragent"));
+        menuItems.add(new MenuItem("Удалить Котрагента","settings","deletekontragent"));
+        menuItems.add(new MenuItem("Назад","back","main"));
+        List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);//new ArrayList<>();
         inlineKeyboardMarkup.setKeyboard(rowList);
 
         if(update.hasCallbackQuery()){
-            EditMessageText editMessage = new EditMessageText();
-            editMessage.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
-            editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
-            editMessage.setText("Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
-                    "я проверяю данные на наличие обновлений и отправляю вам их");
-            editMessage.setReplyMarkup(inlineKeyboardMarkup);
-            try {
-                execute(editMessage);
-            } catch (TelegramApiException ex){
-                System.out.println(ex.toString());
-            }
-        }else{
-            SendMessage sendMessage = new SendMessage();
-            sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
-            sendMessage.setText("Я бот - который парсит закупки ваших контрагентов с сайта zakupki.gov.ru. Один раз в час, " +
-                    "я проверяю данные на наличие обновлений и отправляю вам их");
-            sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-            try {
-                execute(sendMessage);
-            } catch (TelegramApiException ex){
-                System.out.println(ex.toString());
-            }
+            EditingMessage(update, welcometext, inlineKeyboardMarkup);
         }
     }
-
 
     @Override
     public String getBotUsername() {

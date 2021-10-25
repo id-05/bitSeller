@@ -28,5 +28,8 @@ public class BitSellerClients {
         Name = name;
     }
 
-
+    BitSellerClients(String Name, String INN){
+        this.Name = Name;
+        this.INN = INN;
+    }
 }

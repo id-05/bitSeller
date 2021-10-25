@@ -4,6 +4,7 @@ import org.apache.commons.logging.LogFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 
 public class WebHeandless {
@@ -33,13 +34,6 @@ public class WebHeandless {
 
         List<?> divs = page.getByXPath("//div");
 
-//        for(Object obj:divs){
-//            HtmlDivision buf = (HtmlDivision) obj;
-//            System.out.println("__________________________________");
-//            System.out.println((buf).asText());
-//            System.out.println("__________________________________");
-//        }
-
         String[] bufStrings = null;
         for(int i =0; i<divs.size();i++){
             if( ((HtmlDivision)divs.get(i)).asText().contains("Результаты поиска")){
@@ -48,7 +42,7 @@ public class WebHeandless {
             }
         }
 
-        for(int i =0; i<bufStrings.length; i++){
+        for(int i = 0; i< Objects.requireNonNull(bufStrings).length; i++){
             String buf = bufStrings[i];
             if(buf.contains("Результаты поиска")){
                 String bufStr = bufStrings[i+1];

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost
--- Время создания: Июл 21 2021 г., 00:09
+-- Время создания: Окт 25 2021 г., 16:24
 -- Версия сервера: 10.3.29-MariaDB-0+deb10u1
 -- Версия PHP: 7.3.27-1~deb10u1
 
@@ -39,10 +39,10 @@ CREATE TABLE `BitSellerUsers` (
 --
 
 INSERT INTO `BitSellerUsers` (`id`, `name`, `subscription`) VALUES
-('1799503616', 'Andrey', 1),
-('288308220', 'Vladimir', 1),
-('466592916', 'Valentin', 1),
-('693159829', 'Sergey', 1);
+('134534516', 'Andrey', 1),
+('283453453420', 'Vladimir', 1),
+('46345345345', 'Valentin', 1),
+('693345349829', 'Sergey', 1);
 
 --
 -- Индексы сохранённых таблиц

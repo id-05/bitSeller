@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: localhost
--- Время создания: Июл 21 2021 г., 00:08
+-- Время создания: Окт 25 2021 г., 16:23
 -- Версия сервера: 10.3.29-MariaDB-0+deb10u1
 -- Версия PHP: 7.3.27-1~deb10u1
 
@@ -38,7 +38,7 @@ CREATE TABLE `BitSellerResources` (
 --
 
 INSERT INTO `BitSellerResources` (`Name`, `Value`) VALUES
-('telegramtoken', '');
+('telegramtoken', 'your:token');
 
 --
 -- Индексы сохранённых таблиц

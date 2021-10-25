@@ -51,6 +51,8 @@ public interface Dao {
         session.close();
     }
 
+
+
     public default void deleteClient(BitSellerClients client) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
