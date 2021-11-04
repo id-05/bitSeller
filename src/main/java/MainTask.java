@@ -37,11 +37,21 @@ public class MainTask extends TimerTask implements Dao {
             ////////////////////////////////////////////////////////////
             List<BitSellerUsers> usersList;// = new ArrayList<>();
             usersList = getAllUsers();
+            List<Purchase> bufNews = new ArrayList<>();
             for (BitSellerUsers bufUser : usersList) {
                 if(bufUser.isSubscription()) {
-
-                    Main.bot.sendNews(bufUser.getId(), news);
-
+                    for(Purchase bufPurchase:news){
+                        int indZ = bufPurchase.getPrice().indexOf(",");
+                        String bufStr = "0";
+                        if(indZ>0){
+                            bufStr = bufPurchase.getPrice().substring(0,bufPurchase.getPrice().length()-indZ+1);
+                        }
+                        if( Integer.parseInt(bufStr.replaceAll("[^0-9]","")) > bufUser.getFilterfrice() ){
+                            bufNews.add(bufPurchase);
+                        }
+                    }
+                    Main.bot.sendNews(bufUser.getId(), bufNews);
+                    bufNews.clear();
                 }
             }
             ////////////////////////////////////////////////////////////

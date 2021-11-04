@@ -8,6 +8,7 @@ public class BitSellerUsers {
     private String id;
     private String Name;
     private boolean subscription;
+    private int filterfrice;
 
     public BitSellerUsers() {
 
@@ -19,6 +20,14 @@ public class BitSellerUsers {
 
     public void setSubscription(boolean subscription) {
         this.subscription = subscription;
+    }
+
+    public int getFilterfrice() {
+        return filterfrice;
+    }
+
+    public void setFilterfrice(int filterfrice) {
+        this.filterfrice = filterfrice;
     }
 
     public String getId() {
@@ -40,5 +49,11 @@ public class BitSellerUsers {
     public BitSellerUsers(String id, String Name) {
         this.id = id;
         this.Name = Name;
+    }
+
+    public BitSellerUsers(String id, String Name, int filterfrice) {
+        this.id = id;
+        this.Name = Name;
+        this.filterfrice = filterfrice;
     }
 }

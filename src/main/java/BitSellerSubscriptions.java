@@ -8,6 +8,10 @@ public class BitSellerSubscriptions {
     private String tag;
     private int type;
 
+    public BitSellerSubscriptions() {
+
+    }
+
     public void setId(int id) {
         this.id = id;
     }
@@ -41,8 +45,6 @@ public class BitSellerSubscriptions {
         this.type = type;
     }
 
-    BitSellerSubscriptions(){
 
-    }
 
 }

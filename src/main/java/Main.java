@@ -23,7 +23,7 @@ public class Main implements Dao{
     }
 
     public void botInit(){
-        TelegramBotsApi botsApi = null;
+        TelegramBotsApi botsApi;
         try {
             botsApi = new TelegramBotsApi(DefaultBotSession.class);
             bot = new MyTelegramBot(BotToken);
