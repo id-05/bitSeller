@@ -22,7 +22,8 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
     boolean password = false;
     boolean newKontrgagentName = false;
     boolean newKontrgagentINN = false;
-    boolean bottalk =false;
+    boolean bottalk = false;
+    boolean readyFiltrPrice = false;
 
     public MyTelegramBot(String Token){
         this.Token = Token;
@@ -89,9 +90,20 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                         AdminMenu(update);
                     }else {
                         if(!newKontrgagentName) {
-                            BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
-                            sendMsg(user.getId(), "Hello, " + user.getName() + "!");
-                            MainMenu(update);
+                            if(bottalk){
+                                List<BitSellerUsers> usersList;
+                                usersList = getAllUsers();
+                                for (BitSellerUsers bufUser : usersList) {
+                                    if(bufUser.isSubscription()) {
+                                        sendMsg(bufUser.getId(), update.getMessage().getText());
+                                    }
+                                }
+                                bottalk = false;
+                            } else{
+                                BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
+                                sendMsg(user.getId(), "Hello, " + user.getName() + "!");
+                                MainMenu(update);
+                            }
                         }else{
                             if(!newKontrgagentINN) {
                                 BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
@@ -112,15 +124,9 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                                         "Если всё верно, то нажмите подтвердить!",inlineKeyboardMarkup);
                             }
                         }
-                        if(bottalk){
-                            List<BitSellerUsers> usersList;
-                            usersList = getAllUsers();
-                            for (BitSellerUsers bufUser : usersList) {
-                                sendMsg(bufUser.getId(), update.getMessage().getText());
-                            }
-                            bottalk = false;
-                        }
                     }
+
+
                 }else{
                     if(registerStart){
                         if(password){
@@ -204,6 +210,27 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 if (secondTeg.equals("deletekontragent")) {
                     SelectOneClient(update,"deletekontragent");
                 }
+
+                if(secondTeg.equals("filtrprice")){
+                    MenuForChangeFilter(update);
+                }
+            }
+
+            if(firstTeg.equals("filtrprice")){
+                BitSellerUsers user = getUserById(update.getCallbackQuery().getMessage().getChat().getId().toString());
+                int buf = user.getFilterfrice();
+                if(secondTeg.equals("plus")){
+                    user.setFilterfrice(buf + 50000);
+                    saveNewUser(user);
+                    MenuForChangeFilter(update);
+                }
+                if(secondTeg.equals("minus")){
+                    if(buf!=0) {
+                        user.setFilterfrice(buf - 50000);
+                        saveNewUser(user);
+                        MenuForChangeFilter(update);
+                    }
+                }
             }
 
             if(firstTeg.equals("deletekontragent")) {
@@ -211,7 +238,6 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 clientList = getAllClients();
                 for (BitSellerClients bufClient : clientList) {
                     if(bufClient.getINN().equals(secondTeg)){
-
                         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
                         ArrayList<MenuItem> menuItems = new ArrayList<>();
                         menuItems.add(new MenuItem("Подтвердить","deleteKontr",bufClient.getINN()));
@@ -336,6 +362,36 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }
     }
 
+    public void MenuForChangeFilter(Update update){
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
+        inlineKeyboardButton.setText("- 50 000");
+        inlineKeyboardButton.setCallbackData(GetJsonForBotMenu("filtrprice","minus"));
+
+        List<InlineKeyboardButton> keyboardButtonsRow = new ArrayList<>();
+        keyboardButtonsRow.add(inlineKeyboardButton);
+
+        InlineKeyboardButton inlineKeyboardButton2 = new InlineKeyboardButton();
+        inlineKeyboardButton2.setText("+ 50 000");
+        inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("filtrprice","plus"));
+        keyboardButtonsRow.add(inlineKeyboardButton2);
+
+        rowList.add(keyboardButtonsRow);
+
+        List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
+        inlineKeyboardButton2 = new InlineKeyboardButton();
+        inlineKeyboardButton2.setText("Назад");
+        inlineKeyboardButton2.setCallbackData(GetJsonForBotMenu("settings","settings"));
+        keyboardButtonsRow2.add(inlineKeyboardButton2);
+
+        rowList.add(keyboardButtonsRow2);
+        inlineKeyboardMarkup.setKeyboard(rowList);
+
+        BitSellerUsers user = getUserById(update.getCallbackQuery().getMessage().getChat().getId().toString());
+        EditingMessage(update, "Выберите ваш порог фильтрации, закупки ниже этой суммы, не будут попадать в ваши новости! Ваш текущий порог фильтрации: "+user.getFilterfrice(), inlineKeyboardMarkup);
+    }
+
     public void AdminMenu(Update update){
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         ArrayList<MenuItem> menuItems = new ArrayList<>();
@@ -396,7 +452,6 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         menuItems.add(new MenuItem("Назад","back","main"));
         List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
         inlineKeyboardMarkup.setKeyboard(rowList);
-
         if(update.hasCallbackQuery()) {
             EditingMessage(update, "Выберите одного из клиентов:", inlineKeyboardMarkup);
         }
@@ -448,6 +503,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         ArrayList<MenuItem> menuItems = new ArrayList<>();
         menuItems.add(new MenuItem("Добавить Котрагента","settings","addkontragent"));
         menuItems.add(new MenuItem("Удалить Котрагента","settings","deletekontragent"));
+        menuItems.add(new MenuItem("Фильтр по цене закупок","settings","filtrprice"));
         menuItems.add(new MenuItem("Назад","back","main"));
         List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);//new ArrayList<>();
         inlineKeyboardMarkup.setKeyboard(rowList);
