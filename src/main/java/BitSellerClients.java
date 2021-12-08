@@ -7,6 +7,7 @@ public class BitSellerClients {
     @Id
     private String INN;
     private String Name;
+    private String UGroup;
 
     public BitSellerClients() {
 
@@ -26,6 +27,14 @@ public class BitSellerClients {
 
     public void setName(String name) {
         Name = name;
+    }
+
+    public String getUGroup() {
+        return UGroup;
+    }
+
+    public void setUGroup(String UGroup) {
+        this.UGroup = UGroup;
     }
 
     BitSellerClients(String Name, String INN){

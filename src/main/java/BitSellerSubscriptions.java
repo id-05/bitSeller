@@ -4,13 +4,8 @@ import javax.persistence.Id;
 @Entity
 public class BitSellerSubscriptions {
     private int id;
-    private int user;
+    private String user;
     private String tag;
-    private int type;
-
-    public BitSellerSubscriptions() {
-
-    }
 
     public void setId(int id) {
         this.id = id;
@@ -21,11 +16,11 @@ public class BitSellerSubscriptions {
         return id;
     }
 
-    public int getUser() {
+    public String getUser() {
         return user;
     }
 
-    public void setUser(int user) {
+    public void setUser(String user) {
         this.user = user;
     }
 
@@ -37,14 +32,13 @@ public class BitSellerSubscriptions {
         this.tag = tag;
     }
 
-    public int getType() {
-        return type;
+    public BitSellerSubscriptions() {
+
     }
 
-    public void setType(int type) {
-        this.type = type;
+    public BitSellerSubscriptions(String user, String tag) {
+        this.user = user;
+        this.tag = tag;
     }
-
-
 
 }

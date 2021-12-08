@@ -22,6 +22,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
     boolean password = false;
     boolean newKontrgagentName = false;
     boolean newKontrgagentINN = false;
+    boolean newGroup = false;
     boolean bottalk = false;
     boolean readyFiltrPrice = false;
 
@@ -34,10 +35,11 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(chatId);
         sendMessage.setText(s);
+        sendMessage.disableWebPagePreview();
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
-            System.out.println("Error send "+e.getMessage());
+            System.out.println("Error send 1"+e.getMessage());
         }
     }
 
@@ -46,38 +48,51 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         sendMessage.enableMarkdown(true);
         sendMessage.setChatId(chatId);
         sendMessage.setText(s);
+        sendMessage.disableWebPagePreview();
         sendMessage.setReplyMarkup(inlineKeyboardMarkup);
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
-            System.out.println("Error send "+e.getMessage());
+            System.out.println("Error send 2"+e.getMessage());
         }
     }
 
-    public synchronized void sendNews(String chatId, List<Purchase> purchaseList) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Новости госзакупок:").append("\n");
-        for(Purchase bufPurchase:purchaseList){
-            if(!bufPurchase.getINN().equals(""))
-            {
-                stringBuilder.append("\n").append(getClientNameByINN(bufPurchase.getINN())).append(":").append("\n").append("\n");
-            }
-            stringBuilder.append("[").append(bufPurchase.getId()).append("](").
-                    append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
-                    append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
-                    append("=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)");
+    public void sendNews(Update update, List<Purchase> purchaseList){
+        String chatId = update.getCallbackQuery().getMessage().getChat().getId().toString();
+        sendNews(chatId, purchaseList);
+    }
 
-            stringBuilder.append("\n").append(bufPurchase.getDescription()).append("\n");
-            stringBuilder.append("*").append(bufPurchase.getPrice()).append("*").append("\n");
-        }
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.enableMarkdown(true);
-        sendMessage.setChatId(chatId);
-        sendMessage.setText(stringBuilder.toString());
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            System.out.println("Error send "+e.getMessage());
+    public synchronized void sendNews(String chatId, List<Purchase> purchaseList) {
+        if(purchaseList.size()>0) {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("Новости госзакупок:").append("\n");
+            String lastClientName = "";
+            for (Purchase bufPurchase : purchaseList) {
+                    if(!lastClientName.equals(getClientNameByINN(bufPurchase.getINN()))) {
+                        stringBuilder.append("\n").append(getClientNameByINN(bufPurchase.getINN())).append(":").append("\n").append("\n");
+                        lastClientName = getClientNameByINN(bufPurchase.getINN());
+                    }else{
+                        stringBuilder.append("\n").append("\n");
+                    }
+                stringBuilder.append("[").append(bufPurchase.getId()).append("](").
+                        append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
+                        append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
+                        append("=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)");
+
+                stringBuilder.append("\n").append(bufPurchase.getDescription()).append("\n");
+                stringBuilder.append("*").append(bufPurchase.getPrice()).append("*").append("\n");
+            }
+            SendMessage sendMessage = new SendMessage();
+            sendMessage.enableMarkdown(true);
+            sendMessage.setChatId(chatId);
+            sendMessage.disableWebPagePreview();
+            sendMessage.setText(stringBuilder.toString());
+            System.out.println(stringBuilder.toString());
+            try {
+                execute(sendMessage);
+            } catch (TelegramApiException e) {
+                System.out.println("Error send sendNews " + e.getMessage());
+            }
         }
     }
 
@@ -89,31 +104,52 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     if(update.getMessage().getText().equals("Админ")){
                         AdminMenu(update);
                     }else {
+                        BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
                         if(!newKontrgagentName) {
-                            if(bottalk){
-                                List<BitSellerUsers> usersList;
-                                usersList = getAllUsers();
-                                for (BitSellerUsers bufUser : usersList) {
-                                    if(bufUser.isSubscription()) {
-                                        sendMsg(bufUser.getId(), update.getMessage().getText());
+                            if(!newGroup) {
+                                if (bottalk) {
+                                    List<BitSellerUsers> usersList;
+                                    usersList = getAllUsers();
+                                    for (BitSellerUsers bufUser : usersList) {
+                                        if (bufUser.isSubscription()) {
+                                            sendMsg(bufUser.getId(), update.getMessage().getText());
+                                        }
                                     }
+                                    bottalk = false;
+                                } else {
+                                    sendMsg(user.getId(), "Hello, " + user.getName() + "!");
+                                    MainMenu(update);
                                 }
-                                bottalk = false;
-                            } else{
-                                BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
-                                sendMsg(user.getId(), "Hello, " + user.getName() + "!");
-                                MainMenu(update);
+                            }else{
+                                //добавляем новую группу
+                                if(update.getMessage().getText().length()<16) {
+                                    List<BitSellerGroups> allgroups = getAllGroups();
+                                    boolean ifExist = false;
+                                    for (BitSellerGroups bufgroup : allgroups) {
+                                        if (update.getMessage().getText().equals(bufgroup.getName())) {
+                                            ifExist = true;
+                                        }
+                                    }
+                                    if (!ifExist) {
+                                        BitSellerGroups newGroup = new BitSellerGroups(update.getMessage().getText());
+                                        saveNewGroup(newGroup);
+                                        sendMsg(user.getId(), "Группа успешно добавлена!  " + update.getMessage().getText() + "\n", getSettingsMenu(update));
+                                    }else{
+                                        sendMsg(user.getId(), "Группа с таким именем уже существует!  " + update.getMessage().getText() + "\n", getSettingsMenu(update));
+                                    }
+                                }else{
+                                    sendMsg(user.getId(), "Некорректное название группы!  " + update.getMessage().getText() + "\n", getSettingsMenu(update));
+                                }
+                                newGroup = false;
                             }
                         }else{
                             if(!newKontrgagentINN) {
-                                BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
                                 bufName = update.getMessage().getText();
                                 sendMsg(user.getId(), "Проверьте название, вы указали: "+update.getMessage().getText()+"\n"+
                                         "Если всё верно, то теперь отправьте мне ИНН (не более 16 цифр)!",getBackKeybord());
                                 newKontrgagentINN = true;
                             }else{
                                 bufINN = update.getMessage().getText();
-                                BitSellerUsers user = getUserById(update.getMessage().getChat().getId().toString());
                                 InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
                                 ArrayList<MenuItem> menuItems = new ArrayList<>();
                                 menuItems.add(new MenuItem("Подтвердить","settings","saveKontragent"));
@@ -124,6 +160,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                                         "Если всё верно, то нажмите подтвердить!",inlineKeyboardMarkup);
                             }
                         }
+
                     }
 
 
@@ -211,6 +248,15 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     SelectOneClient(update,"deletekontragent");
                 }
 
+                if (secondTeg.equals("addgroup")) {
+                    newGroup = true;
+                    EditingMessage(update, "Отправьте мне название новой группы (не более 16 символов)!", getBackKeybord());
+                }
+
+                if (secondTeg.equals("deletegroup")) {
+                    SelectOneGroup(update,"deletegroup");
+                }
+
                 if(secondTeg.equals("filtrprice")){
                     MenuForChangeFilter(update);
                 }
@@ -260,6 +306,30 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 }
             }
 
+            if(firstTeg.equals("deletegroup")){
+                boolean hasKontragent = false;
+                List<BitSellerGroups> groupsList;
+                groupsList = getAllGroups();
+                List<BitSellerClients> allCleints = getAllClients();
+                for(BitSellerClients bufClient:allCleints){
+                    if (bufClient.getUGroup().equals(secondTeg)) {
+                        hasKontragent = true;
+                        break;
+                    }
+
+                }
+                for (BitSellerGroups bufGroup : groupsList) {
+                    if (bufGroup.getName().equals(secondTeg)) {
+                        if(hasKontragent){
+                            EditingMessage(update, "Не возможно удалить группу! В неё уже добавлены контрагенты! Сначала удалите всех контрагентов!", getSettingsMenu(update));
+                        }else {
+                            deleteGroup(bufGroup);
+                            EditingMessage(update, "Група удалена!", getSettingsMenu(update));
+                        }
+                    }
+                }
+            }
+
             if(firstTeg.equals("purchases")){
                 if(secondTeg.equals("settings")) {
                     SettingsMenu(update);
@@ -284,11 +354,13 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     try {
                         for (BitSellerClients bufClient : clientList) {
                             news.clear();
-                            WebHeandless webParser = new WebHeandless(bufClient.getINN());
+                            BitSellerUsers user = getUserById(update.getCallbackQuery().getMessage().getChat().getId().toString());
+                            int filterPrice = user.getFilterfrice();
+                            WebHeandless webParser = new WebHeandless(bufClient.getINN(),filterPrice);
                             List<Purchase> listPurchase = webParser.getActualPurchase();
                             news.addAll(listPurchase);
                             if(news.size()>0) {
-                                sendNews(update.getCallbackQuery().getMessage().getChat().getId().toString(), news);
+                                sendNews(update, news);
                             }
                         }
                     }catch (Exception e){
@@ -305,7 +377,9 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                     for (BitSellerClients bufClient : clientList) {
                         if(bufClient.getINN().equals(secondTeg)){
                             news.clear();
-                            WebHeandless webParser = new WebHeandless(bufClient.getINN());
+                            BitSellerUsers user = getUserById(update.getCallbackQuery().getMessage().getChat().getId().toString());
+                            int filterPrice = user.getFilterfrice();
+                            WebHeandless webParser = new WebHeandless(bufClient.getINN(),filterPrice);
                             List<Purchase> listPurchase = webParser.getActualPurchase();
                             news.addAll(listPurchase);
                             if(news.size()>0) {
@@ -332,6 +406,10 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 if(secondTeg.equals("main")) {
                     MainMenu(update);
                 }
+
+                if(secondTeg.equals("settings")) {
+                    SettingsMenu(update);
+                }
             }
         }
     }
@@ -342,6 +420,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         editMessage.setChatId(update.getCallbackQuery().getMessage().getChatId().toString());
         editMessage.setMessageId(update.getCallbackQuery().getMessage().getMessageId());
         editMessage.setText(text);
+        editMessage.disableWebPagePreview();
         editMessage.setReplyMarkup(keyboard);
         try {
             execute(editMessage);
@@ -354,6 +433,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(update.getMessage().getChat().getId()));
         sendMessage.setText(text);
+        sendMessage.disableWebPagePreview();
         sendMessage.setReplyMarkup(keyboard);
         try {
             execute(sendMessage);
@@ -457,6 +537,21 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         }
     }
 
+    public void SelectOneGroup(Update update, String firsttag){
+        List<BitSellerGroups> listGroup = getAllGroups();
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        ArrayList<MenuItem> menuItems = new ArrayList<>();
+        for(BitSellerGroups bufGroup:listGroup){
+            menuItems.add(new MenuItem(bufGroup.getName(),firsttag,bufGroup.getName()));
+        }
+        menuItems.add(new MenuItem("Назад","back","settings"));
+        List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        if(update.hasCallbackQuery()) {
+            EditingMessage(update, "Выберите группу для удаления:", inlineKeyboardMarkup);
+        }
+    }
+
     public void MainMenu(Update update){
         BitSellerUsers user;
         if(update.hasCallbackQuery()){
@@ -503,6 +598,8 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         ArrayList<MenuItem> menuItems = new ArrayList<>();
         menuItems.add(new MenuItem("Добавить Котрагента","settings","addkontragent"));
         menuItems.add(new MenuItem("Удалить Котрагента","settings","deletekontragent"));
+        menuItems.add(new MenuItem("Добавить Группу","settings","addgroup"));
+        menuItems.add(new MenuItem("Удалить Группу","settings","deletegroup"));
         menuItems.add(new MenuItem("Фильтр по цене закупок","settings","filtrprice"));
         menuItems.add(new MenuItem("Назад","back","main"));
         List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);//new ArrayList<>();
@@ -511,6 +608,24 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         if(update.hasCallbackQuery()){
             EditingMessage(update, welcometext, inlineKeyboardMarkup);
         }
+    }
+
+    public InlineKeyboardMarkup getSettingsMenu(Update update){
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        ArrayList<MenuItem> menuItems = new ArrayList<>();
+        menuItems.add(new MenuItem("Добавить Котрагента","settings","addkontragent"));
+        menuItems.add(new MenuItem("Удалить Котрагента","settings","deletekontragent"));
+        menuItems.add(new MenuItem("Добавить Группу","settings","addgroup"));
+        menuItems.add(new MenuItem("Удалить Группу","settings","deletegroup"));
+        menuItems.add(new MenuItem("Фильтр по цене закупок","settings","filtrprice"));
+        menuItems.add(new MenuItem("Назад","back","main"));
+        List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);//new ArrayList<>();
+        inlineKeyboardMarkup.setKeyboard(rowList);
+
+//        if(update.hasCallbackQuery()){
+//            EditingMessage(update, welcometext, inlineKeyboardMarkup);
+//        }
+        return inlineKeyboardMarkup;
     }
 
     @Override

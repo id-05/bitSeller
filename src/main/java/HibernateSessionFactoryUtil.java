@@ -6,7 +6,7 @@ import java.util.Properties;
 
 public class HibernateSessionFactoryUtil {
     private static SessionFactory sessionFactory;
-    public static StringBuilder stringBuilder = new StringBuilder();
+    //public static StringBuilder stringBuilder = new StringBuilder();
 
     private HibernateSessionFactoryUtil() {}
 
@@ -19,6 +19,8 @@ public class HibernateSessionFactoryUtil {
                 configuration.addAnnotatedClass(BitSellerUsers.class);
                 configuration.addAnnotatedClass(BitSellerResources.class);
                 configuration.addAnnotatedClass(BitSellerPurchase.class);
+                configuration.addAnnotatedClass(BitSellerGroups.class);
+                configuration.addAnnotatedClass(BitSellerSubscriptions.class);
                 Properties properties = new Properties();
                 properties.setProperty("hibernate.connection.driver_class", Main.hibernateSettings.gethDriver());
                 properties.setProperty("hibernate.connection.url","jdbc:mysql://"+

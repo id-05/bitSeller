@@ -1,7 +1,6 @@
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
-
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
@@ -39,6 +38,22 @@ public interface Dao {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
         session.delete(user);
+        transaction.commit();
+        session.close();
+    }
+
+    public default void saveNewGroup(BitSellerGroups group) {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+        session.saveOrUpdate(group);
+        transaction.commit();
+        session.close();
+    }
+
+    public default void deleteGroup(BitSellerGroups group) {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+        session.delete(group);
         transaction.commit();
         session.close();
     }
@@ -135,6 +150,16 @@ public interface Dao {
         Root<BitSellerUsers> root = criteriaQuery.from(BitSellerUsers.class);
         criteriaQuery.select(root);
         Query<BitSellerUsers> query = session.createQuery(criteriaQuery);
+        return query.getResultList();
+    }
+
+    public default List<BitSellerGroups> getAllGroups() {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<BitSellerGroups> criteriaQuery = builder.createQuery(BitSellerGroups.class);
+        Root<BitSellerGroups> root = criteriaQuery.from(BitSellerGroups.class);
+        criteriaQuery.select(root);
+        Query<BitSellerGroups> query = session.createQuery(criteriaQuery);
         return query.getResultList();
     }
 

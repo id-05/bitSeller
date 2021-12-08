@@ -6,12 +6,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+import org.apache.log4j.Logger;
 
 public class Main implements Dao{
     public static MyTelegramBot bot = null;
     public String BotToken;
     public static JsonSettings hibernateSettings;
     public static StringBuilder stringBuilder = new StringBuilder();
+    private static final Logger log = Logger.getLogger(Main.class);
     public static TimerTask timerTask;
     public static Timer timer;
 
@@ -19,13 +21,14 @@ public class Main implements Dao{
         init();
         botInit();
         timerStart();
-        System.out.println("Main()");
+        log.info("Программа запущена!");
     }
 
     public void botInit(){
         TelegramBotsApi botsApi;
         try {
             botsApi = new TelegramBotsApi(DefaultBotSession.class);
+
             bot = new MyTelegramBot(BotToken);
             botsApi.registerBot(bot);
         } catch (TelegramApiException e) {

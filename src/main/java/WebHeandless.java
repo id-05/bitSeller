@@ -12,9 +12,15 @@ public class WebHeandless {
     int currentDivNumber = 0;
     List<Purchase> listPurchase = new ArrayList<>();
     String INN;
+    int filterPrice = 0;
 
     public WebHeandless(String INN) throws IOException {
         this.INN = INN;
+    }
+
+    public WebHeandless(String INN, int filterPrice) throws IOException {
+        this.INN = INN;
+        this.filterPrice = filterPrice;
     }
 
     public List<Purchase> getActualPurchase() throws IOException {
@@ -58,9 +64,21 @@ public class WebHeandless {
             for(int k = currentDivNumber; k < bufStrings.length; k++){
                 String bufStr = bufStrings[k];
                 if(bufStr.charAt(0) == '№'){
-                    Purchase bufPurchase = new Purchase(INN,bufStr.substring(2,bufStr.length()-1),
-                            bufStrings[k+3], bufStrings[k+7]);
-                    listPurchase.add(bufPurchase);
+                    String buf = bufStrings[k+7];
+                    int indZ = buf.indexOf(",");
+                    String bufStrPrice = "0";
+                    if(indZ>0){
+                        bufStrPrice = buf.substring(0,buf.length()-indZ+1);
+                    }
+                    if( Integer.parseInt(bufStrPrice.replaceAll("[^0-9]","")) > filterPrice ){
+                        Purchase bufPurchase = new Purchase(INN,bufStr.substring(2,bufStr.length()-1),
+                                bufStrings[k+3], bufStrings[k+7]);
+                        listPurchase.add(bufPurchase);
+                    }
+
+//                    Purchase bufPurchase = new Purchase(INN,bufStr.substring(2,bufStr.length()-1),
+//                            bufStrings[k+3], bufStrings[k+7]);
+//                    listPurchase.add(bufPurchase);
                     currentDivNumber = k+7;
                     break;
                 }
