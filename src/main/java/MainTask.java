@@ -44,7 +44,7 @@ public class MainTask extends TimerTask implements Dao {
                         int indZ = bufPurchase.getPrice().indexOf(",");
                         String bufStr = "0";
                         if(indZ>0){
-                            bufStr = bufPurchase.getPrice().substring(0,bufPurchase.getPrice().length()-indZ+1);
+                            bufStr = bufPurchase.getPrice().substring(0,indZ);
                         }
                         if( Integer.parseInt(bufStr.replaceAll("[^0-9]","")) > bufUser.getFilterfrice() ){
                             bufNews.add(bufPurchase);

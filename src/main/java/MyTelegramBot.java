@@ -12,6 +12,7 @@ import java.util.List;
 
 public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
 
+
     String Token;
     String UserName = "bitserver_bot";
     String bufName = "";
@@ -25,6 +26,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
     boolean newGroup = false;
     boolean bottalk = false;
     boolean readyFiltrPrice = false;
+    int countItemInMes = 10;
 
     public MyTelegramBot(String Token){
         this.Token = Token;
@@ -67,6 +69,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("Новости госзакупок:").append("\n");
             String lastClientName = "";
+            int i = 0;
             for (Purchase bufPurchase : purchaseList) {
                     if(!lastClientName.equals(getClientNameByINN(bufPurchase.getINN()))) {
                         stringBuilder.append("\n").append(getClientNameByINN(bufPurchase.getINN())).append(":").append("\n").append("\n");
@@ -77,17 +80,21 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                 stringBuilder.append("[").append(bufPurchase.getId()).append("](").
                         append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
                         append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
-                        append("=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)");
-
+                        append("=_100&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)");
                 stringBuilder.append("\n").append(bufPurchase.getDescription()).append("\n");
                 stringBuilder.append("*").append(bufPurchase.getPrice()).append("*").append("\n");
+                i++;
+                if(i==countItemInMes){
+                    sendMsg(chatId,stringBuilder.toString());
+                    stringBuilder = new StringBuilder();
+                    i=0;
+                }
             }
             SendMessage sendMessage = new SendMessage();
             sendMessage.enableMarkdown(true);
             sendMessage.setChatId(chatId);
             sendMessage.disableWebPagePreview();
             sendMessage.setText(stringBuilder.toString());
-            System.out.println(stringBuilder.toString());
             try {
                 execute(sendMessage);
             } catch (TelegramApiException e) {
@@ -364,7 +371,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                             }
                         }
                     }catch (Exception e){
-                        System.out.println("Возникла ошибка при парсинге!");
+                        System.out.println("Возникла ошибка при парсинге 1!");
                     }
                 }
             }
@@ -388,7 +395,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
                         }
                     }
                 }catch (Exception e){
-                    System.out.println("Возникла ошибка при парсинге!");
+                    System.out.println("Возникла ошибка при парсинге 2!"+e.getMessage());
                 }
             }
 
@@ -507,14 +514,21 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao {
         if(!bufP.getINN().equals("")){
             stringBuilder.append("\n").append(getClientNameByINN(bufP.getINN())).append(":").append("\n");
         }
+        int i = 0;
         for(Purchase bufPurchase:news){
 
             stringBuilder.append("\n").append("[").append(bufPurchase.getId()).append("](").
                     append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
-                    append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
+                    append(bufPurchase.getId()).append("&morphology=on&search-filter=+Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
                     append("=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)");
             stringBuilder.append("\n").append(bufPurchase.getDescription()).append("\n");
             stringBuilder.append("*").append(bufPurchase.getPrice()).append("*").append("\n");
+            i++;
+            if(i==countItemInMes){
+                sendMsg(update.getCallbackQuery().getMessage().getChatId().toString(),stringBuilder.toString());
+                stringBuilder = new StringBuilder();
+                i=0;
+            }
         }
 
         if(update.hasCallbackQuery()){

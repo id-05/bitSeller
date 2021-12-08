@@ -34,8 +34,8 @@ public class WebHeandless {
         webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
 
         final HtmlPage page = webClient.getPage("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=" +
-                INN+"&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&" +
-                "recordsPerPage=_10&showLotsInfoHidden=false&sortBy=UPDATE_DATE&" +
+                INN+"&morphology=on&search-filter=+Дате+размещения&pageNumber=1&sortDirection=false&" +
+                "recordsPerPage=_100&showLotsInfoHidden=false&sortBy=UPDATE_DATE&" +
                 "fz44=on&fz223=on&fz94=on&af=on&currencyIdGeneral=-1");
 
         List<?> divs = page.getByXPath("//div");
@@ -54,7 +54,7 @@ public class WebHeandless {
                 String bufStr = bufStrings[i+1];
                 int j = bufStr.indexOf(" ");
                 coutnActivePurchase = Integer.parseInt(bufStr.substring(0,j));
-                currentDivNumber = i+1;
+                //currentDivNumber = i+1;
                 break;
             }
         }
@@ -68,7 +68,7 @@ public class WebHeandless {
                     int indZ = buf.indexOf(",");
                     String bufStrPrice = "0";
                     if(indZ>0){
-                        bufStrPrice = buf.substring(0,buf.length()-indZ+1);
+                        bufStrPrice = buf.substring(0,indZ);
                     }
                     if( Integer.parseInt(bufStrPrice.replaceAll("[^0-9]","")) > filterPrice ){
                         Purchase bufPurchase = new Purchase(INN,bufStr.substring(2,bufStr.length()-1),
