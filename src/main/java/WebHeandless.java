@@ -72,10 +72,9 @@ public class WebHeandless {
                     }
                     if( Integer.parseInt(bufStrPrice.replaceAll("[^0-9]","")) > filterPrice ){
                         Purchase bufPurchase = new Purchase(INN,bufStr.substring(2,bufStr.length()-1),
-                                bufStrings[k+3], bufStrings[k+7]);
+                                bufStrings[k+3], bufStrings[k+7], bufStrings[k+13]);
                         listPurchase.add(bufPurchase);
                     }
-
 //                    Purchase bufPurchase = new Purchase(INN,bufStr.substring(2,bufStr.length()-1),
 //                            bufStrings[k+3], bufStrings[k+7]);
 //                    listPurchase.add(bufPurchase);

@@ -3,6 +3,7 @@ public class Purchase {
     String INN;
     String description;
     String price;
+    String datebefore;
 
     public String getId() {
         return id;
@@ -36,10 +37,19 @@ public class Purchase {
         this.INN = INN;
     }
 
-    public Purchase(String INN, String id, String description, String price){
+    public String getDatebefore() {
+        return datebefore;
+    }
+
+    public void setDatebefore(String datebefore) {
+        this.datebefore = datebefore;
+    }
+
+    public Purchase(String INN, String id, String description, String price, String datebefore){
         this.INN = INN;
         this.id = id;
         this.description = description;
         this.price = price;
+        this.datebefore = datebefore;
     }
 }
