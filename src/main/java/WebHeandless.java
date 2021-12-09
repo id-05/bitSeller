@@ -75,9 +75,6 @@ public class WebHeandless {
                                 bufStrings[k+3], bufStrings[k+7], bufStrings[k+13]);
                         listPurchase.add(bufPurchase);
                     }
-//                    Purchase bufPurchase = new Purchase(INN,bufStr.substring(2,bufStr.length()-1),
-//                            bufStrings[k+3], bufStrings[k+7]);
-//                    listPurchase.add(bufPurchase);
                     currentDivNumber = k+7;
                     break;
                 }

@@ -9,10 +9,6 @@ public class BitSellerClients {
     private String Name;
     private String UGroup;
 
-    public BitSellerClients() {
-
-    }
-
     public String getINN() {
         return INN;
     }
@@ -37,8 +33,18 @@ public class BitSellerClients {
         this.UGroup = UGroup;
     }
 
+    public BitSellerClients() {
+
+    }
+
     BitSellerClients(String Name, String INN){
         this.Name = Name;
         this.INN = INN;
+    }
+
+    BitSellerClients(String Name, String INN, String UGroup){
+        this.Name = Name;
+        this.INN = INN;
+        this.UGroup = UGroup;
     }
 }

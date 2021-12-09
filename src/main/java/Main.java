@@ -8,7 +8,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import org.apache.log4j.Logger;
 
-public class Main implements Dao{
+public class Main implements Dao {
     public static MyTelegramBot bot = null;
     public String BotToken;
     public static JsonSettings hibernateSettings;

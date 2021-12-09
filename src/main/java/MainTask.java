@@ -35,7 +35,7 @@ public class MainTask extends TimerTask implements Dao {
 
         if(news.size()>0) {
             ////////////////////////////////////////////////////////////
-            List<BitSellerUsers> usersList;// = new ArrayList<>();
+            List<BitSellerUsers> usersList;
             usersList = getAllUsers();
             List<Purchase> bufNews = new ArrayList<>();
             for (BitSellerUsers bufUser : usersList) {

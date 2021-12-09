@@ -4,6 +4,7 @@ import org.hibernate.query.Query;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -105,6 +106,44 @@ public interface Dao {
         }
     }
 
+    public default boolean ifExistSubcription(BitSellerUsers user, String groupname) {
+        String userId= user.getId();
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+        Query query = null;
+        String hql= "from BitSellerSubscriptions  where user=:userId and tag=:groupname";
+        query = session.createQuery(hql);
+        query.setParameter("userId", userId);
+        query.setParameter("groupname", groupname);
+        List<BitSellerSubscriptions> results = query.list();
+        session.close();
+        if (results.size() > 0) {
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public default BitSellerSubscriptions getExistSubcription(BitSellerUsers user, String groupname) {
+        String userId= user.getId();
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        Transaction transaction = session.beginTransaction();
+        Query query = null;
+        String hql= "from BitSellerSubscriptions  where user=:userId and tag=:groupname";
+        query = session.createQuery(hql);
+        query.setParameter("userId", userId);
+        query.setParameter("groupname", groupname);
+        List<BitSellerSubscriptions> results = query.list();
+        session.close();
+        if (results.size() > 0) {
+            Iterator<BitSellerSubscriptions> it = results.iterator();
+            return (BitSellerSubscriptions) it.next();
+        }else{
+            BitSellerSubscriptions bufSub = new BitSellerSubscriptions();
+            return bufSub;
+        }
+    }
+
     public default boolean ifExistPurchase(String purchaseid) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         String hql = "FROM BitSellerPurchase U WHERE U.purchaseid = '" + purchaseid +"'";
@@ -133,6 +172,21 @@ public interface Dao {
         }
     }
 
+    public default BitSellerGroups getGroupByName(String groupname){
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        String hql = "FROM BitSellerGroups U WHERE U.Name = '" + groupname + "'";
+        Query query = session.createQuery(hql);
+        List<BitSellerGroups> results = query.list();
+
+        if (results.size() > 0) {
+            Iterator<BitSellerGroups> it = results.iterator();
+            return (BitSellerGroups) it.next();
+        }else{
+            BitSellerGroups group = new BitSellerGroups();
+            return group;
+        }
+    }
+
     public default List<BitSellerClients> getAllClients() {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         CriteriaBuilder builder = session.getCriteriaBuilder();
@@ -141,6 +195,15 @@ public interface Dao {
         criteriaQuery.select(root);
         Query<BitSellerClients> query = session.createQuery(criteriaQuery);
         return query.getResultList();
+    }
+
+    public default List<BitSellerSubscriptions> getAllUserSubcriptions(BitSellerUsers user){
+        List<BitSellerSubscriptions> listSubcriptions = new ArrayList<>();
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        String hql = "FROM BitSellerSubscriptions U WHERE U.user = '" + user.getId() + "'";
+        Query query = session.createQuery(hql);
+        List<BitSellerSubscriptions> results = query.list();
+        return results;
     }
 
     public default List<BitSellerUsers> getAllUsers() {
