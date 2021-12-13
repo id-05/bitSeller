@@ -1,3 +1,5 @@
+import DAO.BitSellerGroups;
+import DAO.BitSellerSubscriptions;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -7,6 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.ArrayList;
 import java.util.List;
+import DAO.*;
 
 public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHelper {
 

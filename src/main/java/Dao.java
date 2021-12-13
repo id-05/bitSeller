@@ -7,6 +7,8 @@ import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import DAO.*;
+
 
 public interface Dao {
 
@@ -28,19 +30,43 @@ public interface Dao {
     }
 
     public default void saveNewUser(BitSellerUsers user) {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Transaction transaction = session.beginTransaction();
+            session.saveOrUpdate(user);
+            transaction.commit();
+            session.close();
+        }
+
+        public default void deleteUser(BitSellerUsers user) {
+            Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+            Transaction transaction = session.beginTransaction();
+            session.delete(user);
+            transaction.commit();
+            session.close();
+    }
+
+    public default void saveNewFilterWord(BitSellerFilterWord filterWord) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
-        session.saveOrUpdate(user);
+        session.saveOrUpdate(filterWord);
         transaction.commit();
         session.close();
     }
 
-    public default void deleteUser(BitSellerUsers user) {
+    public default void deleteFilterWord(BitSellerFilterWord filterWord) {
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
-        session.delete(user);
+        session.delete(filterWord);
         transaction.commit();
         session.close();
+    }
+
+    public default List<BitSellerFilterWord> getAllUserFilterWords(BitSellerUsers user){
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        String hql = "FROM BitSellerFilterWord U WHERE U.user = '" + user.getId() + "'";
+        Query query = session.createQuery(hql);
+        List<BitSellerFilterWord> results = query.list();
+        return results;
     }
 
     public default void saveNewGroup(BitSellerGroups group) {

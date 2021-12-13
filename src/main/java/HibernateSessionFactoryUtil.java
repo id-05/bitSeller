@@ -1,7 +1,8 @@
+import DAO.BitSellerGroups;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
-
+import DAO.*;
 
 import java.util.Properties;
 
@@ -21,6 +22,7 @@ public class HibernateSessionFactoryUtil {
                 configuration.addAnnotatedClass(BitSellerResources.class);
                 configuration.addAnnotatedClass(BitSellerPurchase.class);
                 configuration.addAnnotatedClass(BitSellerGroups.class);
+                configuration.addAnnotatedClass(BitSellerFilterWord.class);
                 configuration.addAnnotatedClass(BitSellerSubscriptions.class);
                 Properties properties = new Properties();
                 properties.setProperty("hibernate.connection.driver_class", Main.hibernateSettings.gethDriver());

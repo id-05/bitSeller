@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.*;
+import DAO.*;
 
 public class MainTask extends TimerTask implements Dao {
     @Override
@@ -29,20 +30,27 @@ public class MainTask extends TimerTask implements Dao {
         }
 
         if(news.size()>0) {
-            List<BitSellerUsers> usersList;
-            usersList = getAllUsers();
             List<Purchase> bufNews = new ArrayList<>();
-            for (BitSellerUsers bufUser : usersList) {
+            for (BitSellerUsers bufUser : getAllUsers()) {
                 if(bufUser.isSubscription()) {
                     for(Purchase bufPurchase:news){
                         if(ifExistSubscription(bufUser,getClientByINN(bufPurchase.getINN()).getUGroup())) {
-                            int indZ = bufPurchase.getPrice().indexOf(",");
-                            String bufStr = "0";
-                            if (indZ > 0) {
-                                bufStr = bufPurchase.getPrice().substring(0, indZ);
+                            boolean filterDetect = false;
+                            for(BitSellerFilterWord bufFilter:getAllUserFilterWords(bufUser)){
+                                if(bufPurchase.getDescription().contains(bufFilter.getWord())){
+                                    filterDetect = true;
+                                    break;
+                                }
                             }
-                            if (Integer.parseInt(bufStr.replaceAll("[^0-9]", "")) > bufUser.getFilterfrice()) {
-                                bufNews.add(bufPurchase);
+                            if(!filterDetect) {
+                                int indZ = bufPurchase.getPrice().indexOf(",");
+                                String bufStr = "0";
+                                if (indZ > 0) {
+                                    bufStr = bufPurchase.getPrice().substring(0, indZ);
+                                }
+                                if (Integer.parseInt(bufStr.replaceAll("[^0-9]", "")) > bufUser.getFilterfrice()) {
+                                    bufNews.add(bufPurchase);
+                                }
                             }
                         }
                     }
