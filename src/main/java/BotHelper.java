@@ -83,12 +83,12 @@ public interface BotHelper {
     public default InlineKeyboardMarkup getSettingsMenu(){
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         ArrayList<MenuItem> menuItems = new ArrayList<>();
+        menuItems.add(new MenuItem("Мои подписки","settings","subscriptions"));
+        menuItems.add(new MenuItem("Фильтр по цене закупок","settings","filtrprice"));
         menuItems.add(new MenuItem("Добавить Котрагента","settings","addkontragent"));
         menuItems.add(new MenuItem("Удалить Котрагента","settings","deletekontragent"));
         menuItems.add(new MenuItem("Добавить Группу","settings","addgroup"));
         menuItems.add(new MenuItem("Удалить Группу","settings","deletegroup"));
-        menuItems.add(new MenuItem("Фильтр по цене закупок","settings","filtrprice"));
-        menuItems.add(new MenuItem("Мои подписки","settings","subscriptions"));
         menuItems.add(new MenuItem("Назад","back","main"));
         List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);//new ArrayList<>();
         inlineKeyboardMarkup.setKeyboard(rowList);
@@ -118,15 +118,6 @@ public interface BotHelper {
         return inlineKeyboardMarkup;
     }
 
-    public default StringBuilder getPurchaseToMessage(StringBuilder stringBuilder, Purchase bufPurchase){
-        stringBuilder.append("\n").append(bufPurchase.getDescription()).append("\n");
-        stringBuilder.append("*").append(bufPurchase.getPrice()).append("*").append("\n");
-        stringBuilder.append("Подача заявок до: ").append(bufPurchase.getDatebefore()).append("  ");
-        stringBuilder.append("[").append("Открыть"/*bufPurchase.getId()*/).append("](").
-                append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
-                append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
-                append("=_100&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)").append("\n");
-        return stringBuilder;
-    }
+
 
 }

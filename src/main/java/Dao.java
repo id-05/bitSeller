@@ -106,7 +106,7 @@ public interface Dao {
         }
     }
 
-    public default boolean ifExistSubcription(BitSellerUsers user, String groupname) {
+    public default boolean ifExistSubscription(BitSellerUsers user, String groupname) {
         String userId= user.getId();
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         Transaction transaction = session.beginTransaction();
@@ -197,13 +197,30 @@ public interface Dao {
         return query.getResultList();
     }
 
+    public default List<BitSellerClients> getAllClientsFromGroup(String groupname) {
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        String hql = "FROM BitSellerClients U WHERE U.UGroup = '" + groupname + "'";
+        Query query = session.createQuery(hql);
+        List<BitSellerClients> results = query.list();
+        return results;
+    }
+
     public default List<BitSellerSubscriptions> getAllUserSubcriptions(BitSellerUsers user){
-        List<BitSellerSubscriptions> listSubcriptions = new ArrayList<>();
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         String hql = "FROM BitSellerSubscriptions U WHERE U.user = '" + user.getId() + "'";
         Query query = session.createQuery(hql);
         List<BitSellerSubscriptions> results = query.list();
         return results;
+    }
+
+    public default List<BitSellerSubscriptions> getAllSubcriptions(){
+        Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<BitSellerSubscriptions> criteriaQuery = builder.createQuery(BitSellerSubscriptions.class);
+        Root<BitSellerSubscriptions> root = criteriaQuery.from(BitSellerSubscriptions.class);
+        criteriaQuery.select(root);
+        Query<BitSellerSubscriptions> query = session.createQuery(criteriaQuery);
+        return query.getResultList();
     }
 
     public default List<BitSellerUsers> getAllUsers() {
@@ -226,7 +243,7 @@ public interface Dao {
         return query.getResultList();
     }
 
-    public default String getClientNameByINN(String clientINN){
+    public default BitSellerClients getClientByINN(String clientINN){
         Session session = HibernateSessionFactoryUtil.getSessionFactory().openSession();
         String hql = "FROM BitSellerClients U WHERE U.id = '" + clientINN + "'";
         Query query = session.createQuery(hql);
@@ -234,9 +251,9 @@ public interface Dao {
 
         if (results.size() > 0) {
             Iterator<BitSellerClients> it = results.iterator();
-            return  it.next().getName();
+            return  it.next();
         }else{
-            return "noname";
+            return new BitSellerClients();
         }
     }
 

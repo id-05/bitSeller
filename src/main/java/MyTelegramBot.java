@@ -5,9 +5,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHelper {
@@ -69,11 +67,11 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
             String lastClientName = "";
             int i = 0;
             for (Purchase bufPurchase:purchaseList) {
-                    if(!lastClientName.equals(getClientNameByINN(bufPurchase.getINN()))) {
-                        stringBuilder.append("\n").append(getClientNameByINN(bufPurchase.getINN())).append(":").append("\n").append("\n");
-                        lastClientName = getClientNameByINN(bufPurchase.getINN());
+                    if(!lastClientName.equals(getClientByINN(bufPurchase.getINN()).getName())) {
+                        stringBuilder.append("\n").append(getClientByINN(bufPurchase.getINN()).getName()).append(":").append("\n");
+                        lastClientName = getClientByINN(bufPurchase.getINN()).getName();
                     }else{
-                        stringBuilder.append("\n").append("\n");
+                        stringBuilder.append("\n");
                     }
                 stringBuilder = getPurchaseToMessage(stringBuilder,bufPurchase);
                 i++;
@@ -85,6 +83,18 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
             }
             sendMsg(chatId,stringBuilder.toString());
         }
+    }
+
+    public StringBuilder getPurchaseToMessage(StringBuilder stringBuilder, Purchase bufPurchase){
+        stringBuilder.append("\n").append(getClientByINN(bufPurchase.getINN()).getUGroup()).append(" - ").append(getClientByINN(bufPurchase.getINN()).getName()).append("\n");
+        stringBuilder.append(bufPurchase.getDescription()).append("\n");
+        stringBuilder.append("*").append(bufPurchase.getPrice()).append("*").append("\n");
+        stringBuilder.append("Подача заявок до: ").append(bufPurchase.getDatebefore()).append("  ");
+        stringBuilder.append("[").append("Открыть"/*bufPurchase.getId()*/).append("](").
+                append("https://zakupki.gov.ru/epz/order/extendedsearch/results.html?searchString=").
+                append(bufPurchase.getId()).append("&morphology=on&search-filter=Дате+размещения&pageNumber=1&sortDirection=false&recordsPerPage+").
+                append("=_100&showLotsInfoHidden=false&sortBy=UPDATE_DATE&fz44=on&fz223=on&af=on&ca=on&pc=on&pa=on&currencyIdGeneral=-1)").append("\n");
+        return stringBuilder;
     }
 
     @Override
@@ -226,14 +236,14 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
                             }
                             break;
                         case "deletekontragent":
-                            SelectOneClient(update,"deletekontragent");
+                            SelectOneGroup(update,"deleteclientfromg", "back","settings");
                             break;
                         case "addgroup":
                             newGroup = true;
                             editMsg(update, "Отправьте мне название новой группы (не более 16 символов)!", getBackKeybord("settings","settings"));
                             break;
                         case "deletegroup":
-                            SelectOneGroup(update,"deletegroup");
+                            SelectOneGroup(update,"deletegroup","back","settings");
                             break;
                         case "filtrprice":
                             MenuForChangeFilter(update);
@@ -316,18 +326,31 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
 
                 case "deletegroup":
                     boolean hasKontragent = false;
+                    boolean hasSubscription = false;
                     for(BitSellerClients bufClient:getAllClients()){
                         if (bufClient.getUGroup().equals(secondTeg)) {
                             hasKontragent = true;
                             break;
                         }
                     }
-                    if(hasKontragent){
-                        editMsg(update, "Не возможно удалить группу! В неё уже добавлены контрагенты! Сначала удалите всех контрагентов!", getSettingsMenu());
+
+                    for(BitSellerSubscriptions bufSubscription:getAllSubcriptions()){
+                        if(bufSubscription.getTag().equals(secondTeg)){
+                            hasSubscription = true;
+                            break;
+                        }
+                    }
+
+                    if(hasKontragent | hasSubscription){
+                        editMsg(update, "Не возможно удалить группу! В неё уже добавлены контрагенты или есть подписанные клиенты! Сначала удалите всех контрагентов и подписки на группу!", getSettingsMenu());
                     }else {
                         deleteGroup(getGroupByName(secondTeg));
                         editMsg(update, "Группа удалена!", getSettingsMenu());
                     }
+                    break;
+
+                case "backoneclient":
+                    SelectOneClient(update,"getoneclient",secondTeg, "purchases","getoneactive");
                     break;
 
                 case "purchases":
@@ -337,11 +360,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
                             break;
 
                         case "getoneactive":
-                            SelectOneClient(update,"getoneclient");
-                            break;
-
-                        case "backoneclient":
-                            SelectOneClient(update,"getoneclient");
+                            SelectOneGroup(update,"getoneclientfromg", "back", "main");
                             break;
 
                         case "getactive":
@@ -382,6 +401,14 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
                     }
                     break;
 
+                case "getoneclientfromg":
+                    SelectOneClient(update,"getoneclient",secondTeg, "purchases","getoneactive");
+                    break;
+
+                case "deleteclientfromg":
+                    SelectOneClient(update,"deletekontragent",secondTeg, "back","settings");
+                    break;
+
                 case "bottalk":
                     bottalk = true;
                     inlineKeyboardMarkup = new InlineKeyboardMarkup();
@@ -413,7 +440,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
         ArrayList<MenuItem> menuItems = new ArrayList<>();
         for(BitSellerGroups bufGroup:allGroups){
             String status = "";
-            if(ifExistSubcription(user,bufGroup.getName())){
+            if(ifExistSubscription(user,bufGroup.getName())){
                 status = "on";
             }else{
                 status = "off";
@@ -438,7 +465,7 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
         StringBuilder stringBuilder = new StringBuilder();
         Purchase bufP = news.get(0);
         if(!bufP.getINN().equals("")){
-            stringBuilder.append("\n").append(getClientNameByINN(bufP.getINN())).append(":").append("\n");
+            stringBuilder.append("\n").append(getClientByINN(bufP.getINN()).getName()).append(":").append("\n");
         }
         int i = 0;
         for(Purchase bufPurchase:news){
@@ -452,17 +479,18 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
         }
 
         if(update.hasCallbackQuery()){
-            editMsg(update, stringBuilder.toString(), getBackKeybord("purchases","backoneclient"));
+            //editMsg(update, stringBuilder.toString(), getBackKeybord("purchases","backoneclient"));
+            editMsg(update, stringBuilder.toString(), getBackKeybord("backoneclient",getClientByINN(bufP.getINN()).getUGroup()));
         }
     }
 
-    public void SelectOneClient(Update update, String firsttag){
+    public void SelectOneClient(Update update, String firsttag, String groupname, String backOneTag, String backTwoTag){
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         ArrayList<MenuItem> menuItems = new ArrayList<>();
-        for(BitSellerClients bufClient:getAllClients()){
+        for(BitSellerClients bufClient:getAllClientsFromGroup(groupname)){
             menuItems.add(new MenuItem(bufClient.getName(),firsttag,bufClient.getINN()));
         }
-        menuItems.add(new MenuItem("Назад","back","settings"));
+        menuItems.add(new MenuItem("Назад",backOneTag,backTwoTag));
         List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
         inlineKeyboardMarkup.setKeyboard(rowList);
         if(update.hasCallbackQuery()) {
@@ -470,13 +498,13 @@ public class MyTelegramBot extends TelegramLongPollingBot implements Dao, BotHel
         }
     }
 
-    public void SelectOneGroup(Update update, String firsttag){
+    public void SelectOneGroup(Update update, String firsttag, String backOneTag, String backTwoTag){
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         ArrayList<MenuItem> menuItems = new ArrayList<>();
         for(BitSellerGroups bufGroup:getAllGroups()){
             menuItems.add(new MenuItem(bufGroup.getName(),firsttag,bufGroup.getName()));
         }
-        menuItems.add(new MenuItem("Назад","back","settings"));
+        menuItems.add(new MenuItem("Назад",backOneTag,backTwoTag));
         List<List<InlineKeyboardButton>> rowList = getMenuFromItemList(menuItems);
         inlineKeyboardMarkup.setKeyboard(rowList);
         if(update.hasCallbackQuery()) {
